@@ -1,24 +1,18 @@
 ===============================
-manila-ui
+horizon-hpstorage-linkage
 ===============================
 
-Manila Management Dashboard
+HP Storage Dashboard
 
 * Free software: Apache license
-
-.. Uncomment these bullet items when the project is integrated into OpenStack
-.. item * Documentation: http://docs.openstack.org/developer/manila-ui
-.. item * Source: http://git.openstack.org/cgit/openstack/manila-ui
-
-* Bugs: http://bugs.launchpad.net/manila-ui
 
 Installation instructions
 -------------------------
 
-Begin by cloning the Horizon and Manila UI repositories::
+Begin by cloning the Horizon and horizon-hpstorage-linkage repositories::
 
     git clone https://github.com/openstack/horizon
-    git clone https://github.com/hp-storage/manila-ui
+    git clone https://csim-gitlab.rose.hp.com:csim/horizon-hpstorage-linkage
 
 Create a virtual environment and install Horizon dependencies::
 
@@ -33,12 +27,12 @@ Open up the copied ``local_settings.py`` file in your preferred text
 editor. You will want to customize several settings:
 
 -  ``HORIZON_CONFIG`` requires, an entry, ``customization_module``,
-   that refers to ``manila_ui.overrides``::
+   that refers to ``ssmc_link_ui.overrides``::
 
     HORIZON_CONFIG = {
         ...
         'js_spec_files': [],
-        'customization_module': 'manila_ui.overrides',
+        'customization_module': 'ssmc_link_ui.overrides',
     }
 
 -  ``OPENSTACK_HOST`` should be configured with the hostname of your
@@ -48,13 +42,13 @@ editor. You will want to customize several settings:
    OpenStack server to change them.)
 
 
-Install Manila UI with all dependencies in your virtual environment::
+Install horizon-hpstorage-linkage with all dependencies in your virtual environment::
 
-    tools/with_venv.sh pip install -e ../manila-ui/
+    tools/with_venv.sh pip install -e ../horizon-hpstorage-linkage/
 
 And enable it in Horizon::
 
-    cp ../manila-ui/manila_ui/enabled/_90_manila_*.py openstack_dashboard/local/enabled
+    cp ../horizon-hpstorage-linkage/ssmc-link-ui/enabled/_110_ssmc_link_*.py openstack_dashboard/local/enabled
 
 
 Starting the app
@@ -70,10 +64,10 @@ be located at http://localhost:8080/
 Unit testing
 ------------
 
-The unit tests can be executed directly from within this Manila UI plugin
+The unit tests can be executed directly from within this plugin
 project directory by using::
 
-    cd ../manila-ui
+    cd ../horizon-hpstorage-linkage
     ./run_tests.sh
 
 This is made possible by the dependency in test-requirements.txt upon the
