@@ -55,3 +55,9 @@ ChangeLog
 # Unit test artifacts
 *.secret_key_store.lock
 .secret_key_store
+
+# PyCharm files
+.idea
+
+# env files
+tools
