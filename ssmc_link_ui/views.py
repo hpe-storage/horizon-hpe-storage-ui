@@ -128,7 +128,7 @@ class LinkView(forms.ModalFormView):
     submit_label = _("Link")
     submit_url = 'horizon:admin:ssmc_link:link_to'
     success_url = 'horizon:admin:volumes:volumes_tab'
-    page_title = _("Link To SSMC")
+    page_title = _("Linking to SSMC...")
 
     def get_context_data(self, **kwargs):
         context = super(LinkView, self).get_context_data(**kwargs)
@@ -151,7 +151,8 @@ class LinkView(forms.ModalFormView):
             LOG.info(("Session Token = %s") % ssmc_api.get_session_key())
 
             if endpoint:
-                url = endpoint + '#/virtual-volumes/show/'\
+                # "0:url=" is needed for redirect tag for page
+                url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
                         'overview/r/provisioning/REST/volumeviewservice/' \
                         'systems/' + ssmc_api.get_system_wwn() + \
                         '/volumes/' + ssmc_api.get_volume_id() + \
