@@ -42,8 +42,6 @@ class HPSSMC(object):
         self.ssmc_username = username
         self.ssmc_passwd = password
         self.ssmc_token = token
-        # self.ssmc_username = "3paradm"
-        # self.ssmc_passwd = "3pardata"
         self.ssmc_debug = True
         self.launch_page = self.ssmc_api_url + "#/launch-page/"
         self.showUrl = "/virtual-volumes/show/overview/r"
@@ -74,38 +72,6 @@ class HPSSMC(object):
             return
         if self.ssmc_debug:
             self.client.debug_rest(True)
-
-    # def getVolumeUrlPage(self,volume):
-    #     url = self.searchForVolumeUrlPage(volume)
-    #     launchPage = None
-    #
-    #     if url:
-    #         launchPage = self.launch_page + self.client.getSessionKey() + self.showUrl + url
-    #     return launchPage
-    #
-    # def searchForVolumeUrlPage(self, volume):
-    #     """Get the Storage System Information
-    #
-    #     :returns: Dictionary of Storage System Info
-    #
-    #     """
-    #     volume_id = volume.id
-    #     vol_name = self._get_3par_vol_name(volume_id)
-    #     category = "category=virtual-volumes"
-    #     search = "/rest/index/search-suggestions?userQuery="
-    #     body = self.client.searchVolume(search + vol_name + "&" + category)
-    #     url = None
-    #     if body and 'hits' in body:
-    #         hits = body['hits']
-    #         if hits and 'hits' in hits:
-    #            hit_lists = hits['hits']
-    #            for hit in hit_lists:
-    #                 source = hit['_source']
-    #                 name = source['name']
-    #                 if name.encode('utf-8') == vol_name:
-    #                     url = source['url']
-    #                     break
-    #     return url
 
     def _encode_name(self, name):
         uuid_str = name.replace("-", "")

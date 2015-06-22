@@ -27,8 +27,8 @@ from keystoneclient.exceptions import Conflict  # noqa
 from openstack_dashboard import api
 from openstack_dashboard import policy
 
-import api.keystone_api as keystone
-import api.barbican_api as barbican
+import ssmc_link_ui.api.keystone_api as keystone
+import ssmc_link_ui.api.barbican_api as barbican
 
 
 class CreateEndpointAction(tables.LinkAction):

@@ -15,9 +15,9 @@ from django.conf.urls import url
 
 # from openstack_dashboard.dashboards.admin.volumes.volumes \
 #     import views
-from ssmc_link_ui import views
+from ssmc_link_ui.storage_panel import views
 
-VIEWS_MOD = ('ssmc_link_ui.views')
+VIEWS_MOD = ('ssmc_link_ui.storage_panel.views')
 # VIEWS_MOD = ('dashboards.admin.volumes.volumes.views')
 
 urlpatterns = patterns(

@@ -31,9 +31,9 @@ import logging
 LOG = logging.getLogger(__name__)
 import webbrowser
 
-import api.keystone_api as keystone
-import api.barbican_api as barbican
-import api.cinder_api as cinder
+import ssmc_link_ui.api.keystone_api as keystone
+import ssmc_link_ui.api.barbican_api as barbican
+import ssmc_link_ui.api.cinder_api as cinder
 
 
 

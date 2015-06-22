@@ -20,7 +20,7 @@ from horizon.utils import memoized
 from openstack_dashboard.api import cinder
 
 # from openstack_dashboard.api import cinder
-from ssmc_link_ui import forms as deeplink_forms
+from ssmc_link_ui.storage_panel import forms as deeplink_forms
 
 # from deep_link_ui import forms as xxx
 
@@ -32,11 +32,11 @@ import uuid
 import base64
 import re
 
-import api.hp_ssmc_api as hpssmc
-import api.keystone_api as keystone
-import api.barbican_api as barbican
+import ssmc_link_ui.api.hp_ssmc_api as hpssmc
+import ssmc_link_ui.api.keystone_api as keystone
+import ssmc_link_ui.api.barbican_api as barbican
 
-from ssmc_link_ui import tables as project_tables
+from ssmc_link_ui.storage_panel import tables as project_tables
 
 import logging
 
