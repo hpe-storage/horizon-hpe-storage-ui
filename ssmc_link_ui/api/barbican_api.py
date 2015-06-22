@@ -24,6 +24,8 @@ import pprint
 import re
 import uuid
 
+from django.conf import settings
+
 from oslo.utils import importutils
 import six
 
@@ -38,10 +40,11 @@ class BarbicanAPI(object):
     def __init__(self):
         self.client = None
         self.uuid = uuid.uuid4()
-        self.barbican_api_url = "http://10.50.141.1:9311"
+        openstack_host = getattr(settings, 'OPENSTACK_HOST')
+        self.barbican_api_url = 'http://' + openstack_host + ':9311'
         self.debug = True
-        self.launch_page = self.barbican_api_url + "/#/launch-page/"
-        self.showUrl = "/virtual-volumes/show/overview/r"
+        self.launch_page = self.barbican_api_url + '/#/launch-page/'
+        self.showUrl = '/virtual-volumes/show/overview/r'
 
     def _create_client(self):
         cl = client.BarbicanClient(self.barbican_api_url)

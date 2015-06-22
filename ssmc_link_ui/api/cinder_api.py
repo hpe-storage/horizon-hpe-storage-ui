@@ -24,6 +24,8 @@ import pprint
 import re
 import uuid
 
+from django.conf import settings
+
 from oslo.utils import importutils
 import six
 
@@ -38,10 +40,11 @@ class CinderAPI(object):
     def __init__(self):
         self.client = None
         self.uuid = uuid.uuid4()
-        self.cinder_api_url = "http://10.50.141.1:8776"
+        openstack_host = getattr(settings, 'OPENSTACK_HOST')
+        self.cinder_api_url = 'http://' + openstack_host + ':8776'
         self.debug = True
-        self.launch_page = self.cinder_api_url + "/#/launch-page/"
-        self.showUrl = "/virtual-volumes/show/overview/r"
+        self.launch_page = self.cinder_api_url + '/#/launch-page/'
+        self.showUrl = '/virtual-volumes/show/overview/r'
 
     def _create_client(self):
         cl = client.CinderClient(self.cinder_api_url)

@@ -24,6 +24,8 @@ import pprint
 import re
 import uuid
 
+from django.conf import settings
+
 from oslo.utils import importutils
 import six
 
@@ -36,14 +38,15 @@ LOG = logging.getLogger(__name__)
 class KeystoneAPI(object):
 
     def __init__(self):
+        openstack_host = getattr(settings, 'OPENSTACK_HOST')
         self.client = None
         self.uuid = uuid.uuid4()
-        self.keystone_api_url = "http://10.50.141.1:5000"
-        self.keystone_username = "admin"
-        self.keystone_passwd = "hpinvent"
+        self.keystone_api_url = 'http://' + openstack_host + ':5000'
+        self.keystone_username = 'admin'
+        self.keystone_passwd = 'hpinvent'
         self.debug = True
-        self.launch_page = self.keystone_api_url + "/#/launch-page/"
-        self.showUrl = "/virtual-volumes/show/overview/r"
+        self.launch_page = self.keystone_api_url + '/#/launch-page/'
+        self.showUrl = '/virtual-volumes/show/overview/r'
 
     def _create_client(self):
         cl = client.KeystoneClient(self.keystone_api_url)
