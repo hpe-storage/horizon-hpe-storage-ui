@@ -120,6 +120,8 @@ class EditEndpointView(forms.ModalFormView):
         return {'service_id': service_id}
 
 
+ssmc_tokens = {}     # keep tokens for performance
+
 class LinkView(forms.ModalFormView):
     form_class = deeplink_forms.LinkToSSMC
     modal_header = _("Link to SSMC")
@@ -129,6 +131,9 @@ class LinkView(forms.ModalFormView):
     submit_url = 'horizon:admin:ssmc_link:link_to'
     success_url = 'horizon:admin:volumes:volumes_tab'
     page_title = _("Linking to SSMC...")
+    keystone_api = None
+    barbican_api = None
+    ssmc_api = None
 
     def get_context_data(self, **kwargs):
         context = super(LinkView, self).get_context_data(**kwargs)
@@ -142,21 +147,22 @@ class LinkView(forms.ModalFormView):
         try:
             volume_id = self.kwargs['volume_id']
             volume = cinder.volume_get(self.request, volume_id)
+
             volume_name = self.get_3par_vol_name(volume_id)
             LOG.info(("!!!!!!!!!! GET ELEMENT MANAGER FOR VOLUME = %s") % volume_name)
             formatted_vol_name = format(volume_name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
-            LOG.info(("Session Token = %s") % ssmc_api.get_session_key())
+            LOG.info(("Session Token = %s") % self.ssmc_api.get_session_key())
 
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
                 url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
                         'overview/r/provisioning/REST/volumeviewservice/' \
-                        'systems/' + ssmc_api.get_system_wwn() + \
-                        '/volumes/' + ssmc_api.get_volume_id() + \
-                        '?sessionToken=' + ssmc_api.get_session_key()
+                        'systems/' + self.ssmc_api.get_system_wwn() + \
+                        '/volumes/' + self.ssmc_api.get_volume_id() + \
+                        '?sessionToken=' + self.ssmc_api.get_session_key()
 
                 LOG.info(("SSMC URL = %s") % url)
                 return volume, url
@@ -171,7 +177,6 @@ class LinkView(forms.ModalFormView):
                               redirect=self.success_url)
 
     def get_initial(self):
-
         volume, link_url = self.get_data()
         return {'volume_id': self.kwargs["volume_id"],
                 'name': volume.name,
@@ -190,10 +195,11 @@ class LinkView(forms.ModalFormView):
         return "osv-%s" % vol_encoded
 
     def get_SSMC_endpoint(self, volume):
-        global keystone_api
-        keystone_api = keystone.KeystoneAPI()
-        keystone_api.do_setup(None)
-        keystone_api.client_login()
+        if self.keystone_api == None:
+            self.keystone_api = keystone.KeystoneAPI()
+            self.keystone_api.do_setup(None)
+            self.keystone_api.client_login()
+
         host_name = getattr(volume, 'os-vol-host-attr:host', None)
         # pull out host from host name (comes between @ and #)
         found = re.search('@(.+?)#', host_name)
@@ -201,22 +207,33 @@ class LinkView(forms.ModalFormView):
             host = found.group(1)
         else:
             return None
-        endpt = keystone_api.get_ssmc_endpoint_for_host(host)
+        endpt = self.keystone_api.get_ssmc_endpoint_for_host(host)
 
-        global barbican_api
-        barbican_api = barbican.BarbicanAPI()
-        barbican_api.do_setup(None)
-        # barbican_api.client_login()
-        uname, pwd = barbican_api.get_credentials(keystone_api.get_session_key(),
+        if self.barbican_api == None:
+            self.barbican_api = barbican.BarbicanAPI()
+            self.barbican_api.do_setup(None)
+            # barbican_api.client_login()
+        uname, pwd = self.barbican_api.get_credentials(self.keystone_api.get_session_key(),
                                                   host)
 
-        global ssmc_api
         if endpt:
-            ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd)
-            ssmc_api.do_setup(None)
-            ssmc_api.client_login()
+            # attempt to use previous token for the SSMC endpoint, if it exists
+            global ssmc_tokens
+            ssmc_token = None
+            # pull ip out of SSMC endpoint
+            ssmc_ip = endpt[endpt.find('//')+len('//'):endpt.rfind(':')]
+            if ssmc_ip in ssmc_tokens:
+                ssmc_token = ssmc_tokens[ssmc_ip]
 
-            ssmc_api.get_volume_info(volume.id)
+            self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
+            self.ssmc_api.do_setup(None)
+            # this call is the bottle neck. Note that SSMC must attempt to
+            # login to each of the arrays it manages. And if one of those is
+            # down, the timeouts makes this call even longer to complete
+            self.ssmc_api.client_login()
+
+            self.ssmc_api.get_volume_info(volume.id)
+            ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
             return endpt
         else:
             raise ValueError("SSMC Endpoint does not exist for this backend host")

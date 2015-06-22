@@ -35,12 +35,13 @@ LOG = logging.getLogger(__name__)
 
 class HPSSMC(object):
 
-    def __init__(self, endpt, username, password):
+    def __init__(self, endpt, username, password, token):
         self.client = None
         self.uuid = uuid.uuid4()
         self.ssmc_api_url = endpt
         self.ssmc_username = username
         self.ssmc_passwd = password
+        self.ssmc_token = token
         # self.ssmc_username = "3paradm"
         # self.ssmc_passwd = "3pardata"
         self.ssmc_debug = True
@@ -55,7 +56,8 @@ class HPSSMC(object):
         try:
             LOG.debug("Connecting to SSMC")
             self.client.login(self.ssmc_username,
-                              self.ssmc_passwd)
+                              self.ssmc_passwd,
+                              self.ssmc_token)
         except Exception:
             LOG.error("Can't LOG IN")
 

@@ -90,7 +90,7 @@ class HTTPJSONRESTClient(httplib2.Http):
             #self._logger.setLevel(logging.DEBUG)
             #self._logger.addHandler(ch)
 
-    def authenticateSSMC(self, user, password, optional=None):
+    def authenticateSSMC(self, user, password, token, optional=None):
         """
         This tries to create an authenticated session with the 3PAR server
 
@@ -100,45 +100,39 @@ class HTTPJSONRESTClient(httplib2.Http):
         :type password: str
 
         """
-        # this prevens re-auth attempt if auth fails
-        self.auth_try = 1
-        self.session_key = None
+        try:
+            # first check if old token is still valid
+            if token is not None:
+                header = {'Authorization': token}
+                resp, body = self.get('/foundation/REST/sessionservice/sessions/' + token + '/context', headers=header)
+                if body and 'availableSystems' in body:
+                    self.user = user
+                    self.password = password
+                    self.session_key = token
+                    return
 
-        info = {'username': user, 'password': password}
-        self._auth_optional = None
+            # this prevens re-auth attempt if auth fails
+            self.auth_try = 1
+            self.session_key = None
 
-        if optional:
-            self._auth_optional = optional
-            info.update(optional)
+            info = {'username': user, 'password': password}
+            self._auth_optional = None
 
-        resp, body = self.post('/foundation/REST/sessionservice/sessions', body=info)
-        if body and 'object' in body:
-            object = body['object']
-            if object and 'Authorization' in object:
-                self.session_key = object['Authorization']
+            if optional:
+                self._auth_optional = optional
+                info.update(optional)
 
-        self.auth_try = 0
-        self.user = user
-        self.password = password
+            resp, body = self.post('/foundation/REST/sessionservice/sessions', body=info)
+            if body and 'object' in body:
+                object = body['object']
+                if object and 'Authorization' in object:
+                    self.session_key = object['Authorization']
 
-    def getSSMCSessionToken(self, user, password, optional=None):
-        self.session_key = None
-
-        # get uname/password from Barbican service
-
-
-
-
-        info = {'username': user, 'password': password}
-        resp, body = self.post('/foundation/REST/sessionservice/sessions', body=info)
-        if body and 'object' in body:
-            object = body['object']
-            if object and 'Authorization' in object:
-                self.session_key = object['Authorization']
-
-        self.user = user
-        self.password = password
-        return self.session_key
+            self.auth_try = 0
+            self.user = user
+            self.password = password
+        except Exception as ex:
+            i = 10
 
     def getVolumeLink(self, name):
         self.auth_try = 1

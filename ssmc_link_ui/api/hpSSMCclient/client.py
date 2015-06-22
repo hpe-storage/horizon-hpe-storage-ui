@@ -64,7 +64,7 @@ class HPSSMCClient(object):
         self.http.set_debug_flag(flag)
 
 
-    def login(self, username, password, optional=None):
+    def login(self, username, password, token, optional=None):
         """This authenticates against the 3PAR wsapi server and creates a
            session.
 
@@ -76,7 +76,7 @@ class HPSSMCClient(object):
         :returns: None
 
         """
-        self.http.authenticateSSMC(username, password, optional)
+        self.http.authenticateSSMC(username, password, token, optional)
 
     def logout(self):
         """This destroys the session and logs out from the 3PAR server.
