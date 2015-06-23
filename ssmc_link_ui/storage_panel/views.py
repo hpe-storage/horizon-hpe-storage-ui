@@ -33,6 +33,7 @@ from horizon import tabs
 import uuid
 import base64
 import re
+from urlparse import urlparse
 
 import ssmc_link_ui.api.hp_ssmc_api as hpssmc
 import ssmc_link_ui.api.keystone_api as keystone
@@ -203,7 +204,8 @@ class LinkView(forms.ModalFormView):
             global ssmc_tokens
             ssmc_token = None
             # pull ip out of SSMC endpoint
-            ssmc_ip = endpt[endpt.find('//')+len('//'):endpt.rfind(':')]
+            parsed = urlparse(endpt)
+            ssmc_ip = parsed.hostname
             if ssmc_ip in ssmc_tokens:
                 ssmc_token = ssmc_tokens[ssmc_ip]
 

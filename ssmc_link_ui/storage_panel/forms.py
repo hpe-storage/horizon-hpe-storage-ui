@@ -23,6 +23,10 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import forms
 from horizon import messages
+from horizon.utils import validators
+
+from urlparse import urlparse
+
 from django.http import HttpResponseRedirect
 from django import forms as dj_forms
 
@@ -39,13 +43,21 @@ import ssmc_link_ui.api.cinder_api as cinder
 
 class CreateEndpoint(forms.SelfHandlingForm):
     backend = forms.ChoiceField(label=_("Available Cinder Backends"))
-    endpoint = forms.CharField(max_length=255,
-                               label=_("SSMC Endpoint"))
+    endpoint_ip = forms.IPField(label=_("SSMC Endpoint IP Address"))
+    endpoint_port = forms.IntegerField(
+        label=_("SSMC Endpoint Port"),
+        help_text=_("Enter an integer value between 1 and 65535."),
+        validators=[validators.validate_port_range])
     uname = forms.CharField(max_length=255,
                             label=_("SSMC Username"))
-    pwd  = forms.CharField(max_length=255,
-                           widget=dj_forms.PasswordInput,
-                           label=_("SSMC Password"))
+    pwd = forms.RegexField(
+        label=_("SSMC Password"),
+        widget=forms.PasswordInput(render_value=False),
+        regex=validators.password_validator(),
+        error_messages={'invalid': validators.password_validator_msg()})
+    confirm_password = forms.CharField(
+        label=_("Confirm Password"),
+        widget=forms.PasswordInput(render_value=False))
 
     def __init__(self, request, *args, **kwargs):
         super(forms.SelfHandlingForm, self).__init__(request, *args, **kwargs)
@@ -74,6 +86,17 @@ class CreateEndpoint(forms.SelfHandlingForm):
 
         self.fields['backend'].choices = choices
 
+        # set default port number
+        self.fields['endpoint_port'].initial = '8443'
+
+    def clean(self):
+        # Check to make sure password fields match
+        data = super(forms.Form, self).clean()
+        if 'pwd' in data and 'confirm_password' in data:
+            if data['pwd'] != data['confirm_password']:
+                raise ValidationError(_('Passwords do not match.'))
+        return data
+
     def handle(self, request, data):
         try:
             # create new keypoint service and endpoint
@@ -81,8 +104,9 @@ class CreateEndpoint(forms.SelfHandlingForm):
             keystone_api.do_setup(None)
             keystone_api.client_login()
             backend_name = 'ssmc-' + data['backend']
-            keystone_api.add_ssmc_endpoint(backend_name,
-                                          data['endpoint'])
+            port = str(data['endpoint_port'])
+            endpoint = 'https://' + data['endpoint_ip'] + ':' + port + '/'
+            keystone_api.add_ssmc_endpoint(backend_name, endpoint)
 
             # store credentials for endpoint using barbican
             barbican_api = barbican.BarbicanAPI()
@@ -104,23 +128,33 @@ class CreateEndpoint(forms.SelfHandlingForm):
 
 class EditEndpoint(forms.SelfHandlingForm):
     backend = forms.CharField(label=_("Cinder Backend"),
-                           required=False,
-                           widget=forms.TextInput(
-                           attrs={'readonly': 'readonly'}))
-    endpoint = forms.CharField(max_length=255,
-                               label=_("SSMC Endpoint"))
+                              required=False,
+                              widget=forms.TextInput(
+                                  attrs={'readonly': 'readonly'}))
+    endpoint_ip = forms.IPField(label=_("SSMC Endpoint IP Address"))
+    endpoint_port = forms.IntegerField(
+        label=_("SSMC Endpoint Port"),
+        help_text=_("Enter an integer value between 1 and 65535."),
+        validators=[validators.validate_port_range])
     uname = forms.CharField(max_length=255,
                             label=_("SSMC Username"))
-    pwd  = forms.CharField(max_length=255,
-                           widget=dj_forms.PasswordInput,
-                           label=_("SSMC Password"))
+    pwd = forms.RegexField(
+        label=_("SSMC Password"),
+        widget=forms.PasswordInput(render_value=False),
+        regex=validators.password_validator(),
+        error_messages={'invalid': validators.password_validator_msg()})
+    confirm_password = forms.CharField(
+        label=_("Confirm Password"),
+        required=False,
+        widget=forms.PasswordInput(render_value=False))
 
     def __init__(self, request, *args, **kwargs):
         super(EditEndpoint, self).__init__(request, *args, **kwargs)
         service_id = self.initial['service_id']
 
         backend_field = self.fields['backend']
-        endpoint_field = self.fields['endpoint']
+        endpoint_ip_field = self.fields['endpoint_ip']
+        endpoint_port_field = self.fields['endpoint_port']
         uname_field = self.fields['uname']
         pwd_field = self.fields['pwd']
 
@@ -132,7 +166,10 @@ class EditEndpoint(forms.SelfHandlingForm):
         endpoint, name = keystone_api.get_ssmc_endpoint_for_service_id(service_id)
         backend_name = name[5:]    # remove 'ssmc-' prefix
         backend_field.initial = backend_name
-        endpoint_field.initial = endpoint['url']
+
+        parsed = urlparse(endpoint['url'])
+        endpoint_ip_field.initial = parsed.hostname
+        endpoint_port_field.initial = parsed.port
 
         # initialize credentials fields
         barbican_api = barbican.BarbicanAPI()
@@ -149,20 +186,29 @@ class EditEndpoint(forms.SelfHandlingForm):
         form_data = self.cleaned_data
 
         # ensure that data has changed
-        endpoint_field = self.fields['endpoint']
+        endpoint_ip_field = self.fields['endpoint_ip']
+        endpoint_port_field = self.fields['endpoint_port']
         uname_field = self.fields['uname']
         pwd_field = self.fields['pwd']
 
-        if form_data['endpoint'] == endpoint_field.initial:
-            if form_data['uname'] == uname_field.initial:
-                if form_data['pwd'] == pwd_field.initial:
-                    raise forms.ValidationError(
-                        _('No fields have been modified.'))
+        if form_data['endpoint_ip'] == endpoint_ip_field.initial:
+            if form_data['endpoint_port'] == endpoint_port_field.initial:
+                if form_data['uname'] == uname_field.initial:
+                    if form_data['pwd'] == pwd_field.initial:
+                        raise forms.ValidationError(
+                            _('No fields have been modified.'))
+
+        # Check to make sure password fields match.
+        if form_data['pwd'] != pwd_field.initial:
+            if form_data['pwd'] != form_data['confirm_password']:
+                raise ValidationError(_('Passwords do not match.'))
+
         return form_data
 
     def handle(self, request, data):
         try:
-            endpoint_field = self.fields['endpoint']
+            endpoint_ip_field = self.fields['endpoint_ip']
+            endpoint_port_field = self.fields['endpoint_port']
             uname_field = self.fields['uname']
             pwd_field = self.fields['pwd']
 
@@ -171,10 +217,14 @@ class EditEndpoint(forms.SelfHandlingForm):
             keystone_api.client_login()
             backend_name = 'ssmc-' + data['backend']
 
-            # only update endpoint if it has changed
-            new_endpoint = data['endpoint']
-            if new_endpoint != endpoint_field.initial:
+            # only update endpoint if url or port has changed
+            new_endpoint_ip = data['endpoint_ip']
+            new_endpoint_port = data['endpoint_port']
+            if ((new_endpoint_ip != endpoint_ip_field.initial) or
+                (new_endpoint_port != endpoint_port_field.initial)):
                 service_id = self.initial['service_id']
+                port = str(new_endpoint_port)
+                new_endpoint = 'https://' + data['endpoint_ip'] + ':' + port + '/'
                 keystone_api.update_ssmc_endpoint_url(service_id, new_endpoint)
 
             # only update credentials if they have changed
