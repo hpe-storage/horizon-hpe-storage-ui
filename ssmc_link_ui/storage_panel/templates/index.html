@@ -2,10 +2,10 @@
 {% load i18n %}
 {% block title %}{% trans "HP Storage" %}{% endblock %}
 
-{% block page_header %}
-  {% include "horizon/common/_domain_page_header.html" with title=page_title %}
-{% endblock page_header %}
-
 {% block main %}
-  {{ table.render }}
+<div class="row">
+  <div class="col-sm-12">
+    {{ tab_group.render }}
+  </div>
+</div>
 {% endblock %}

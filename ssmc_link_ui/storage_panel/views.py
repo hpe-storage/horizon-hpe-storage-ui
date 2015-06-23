@@ -28,6 +28,8 @@ from horizon import tabs
 from openstack_dashboard.dashboards.admin.defaults import tabs as project_tabs
 
 from horizon import tables
+from horizon import tabs
+
 import uuid
 import base64
 import re
@@ -37,42 +39,22 @@ import ssmc_link_ui.api.keystone_api as keystone
 import ssmc_link_ui.api.barbican_api as barbican
 
 from ssmc_link_ui.storage_panel import tables as project_tables
+from ssmc_link_ui.storage_panel import tabs as project_tabs
 
 import logging
 
 LOG = logging.getLogger(__name__)
 
 
-class IndexView(tables.DataTableView):
-    table_class = project_tables.EndpointsTable
+class IndexView(tabs.TabbedTableView):
+    tab_group_class = project_tabs.StorageTabs
     template_name = 'index.html'
-    page_title = _("Link Backends to SSMC Endpoints")
-
-    def get_data(self):
-        endpoints = []
-
-        try:
-            keystone_api = keystone.KeystoneAPI()
-            keystone_api.do_setup(None)
-            keystone_api.client_login()
-            endpoints = keystone_api.get_ssmc_endpoints()
-
-            # for each endpoint, get credentials
-            barbican_api = barbican.BarbicanAPI()
-            barbican_api.do_setup(None)
-            for endpoint in endpoints:
-                uname, pwd = barbican_api.get_credentials(
-                    keystone_api.get_session_key(), endpoint['backend'])
-                endpoint['username'] = uname
-
-        except Exception:
-            msg = _('Unable to retrieve endpoints list.')
-            exceptions.handle(self.request, msg)
-        return endpoints
+    page_title = _("HP Storage")
 
 
 class CreateEndpointView(forms.ModalFormView):
     form_class = deeplink_forms.CreateEndpoint
+
     modal_header = _("Create Endpoint")
     modal_id = "create_endpoint_modal"
     template_name = 'create_endpoint.html'

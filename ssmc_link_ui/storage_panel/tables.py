@@ -98,9 +98,9 @@ class EndpointsTable(tables.DataTable):
         return endpoint['id']
 
     class Meta(object):
-        name = "deeplinks"
+        name = "endpoints"
         verbose_name = _("Backend EndPoints")
-        hidden_title = False
+        # hidden_title = False
         table_actions = (CreateEndpointAction,
                          DeleteEndpointAction,)
         row_actions = (EditEndpointAction,
