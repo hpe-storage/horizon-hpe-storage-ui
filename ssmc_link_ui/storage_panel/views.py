@@ -138,15 +138,16 @@ class LinkView(forms.ModalFormView):
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
             LOG.info(("Session Token = %s") % self.ssmc_api.get_session_key())
-
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
                 url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
                         'overview/r/provisioning/REST/volumeviewservice/' \
                         'systems/' + self.ssmc_api.get_system_wwn() + \
-                        '/volumes/' + self.ssmc_api.get_volume_id() + \
-                        '?sessionToken=' + self.ssmc_api.get_session_key()
+                        '/volumes/' + self.ssmc_api.get_volume_id() # + \
+                        # '?sessionToken=' + self.ssmc_api.get_session_key()
 
+                # USE if we want user to log in every time
+                # self.logout_SSMC_session(endpoint)
                 LOG.info(("SSMC URL = %s") % url)
                 return volume, url
 
@@ -223,3 +224,17 @@ class LinkView(forms.ModalFormView):
             raise ValueError("SSMC Endpoint does not exist for this backend host")
 
         return None
+
+    def logout_SSMC_session(self, endpt):
+        # logout of session
+        self.ssmc_api.client_logout()
+
+        global ssmc_tokens
+        ssmc_token = None
+        # pull ip out of SSMC endpoint
+        parsed = urlparse(endpt)
+        ssmc_ip = parsed.hostname
+        if ssmc_ip in ssmc_tokens:
+            # remove reference to this token, so we start fresh next time
+            del ssmc_tokens[ssmc_ip]
+

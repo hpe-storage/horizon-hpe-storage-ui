@@ -101,21 +101,25 @@ class HTTPJSONRESTClient(httplib2.Http):
 
         """
         try:
+            # this prevens re-auth attempt if auth fails
+            self.auth_try = 1
+            self.session_key = None
+
             # first check if old token is still valid
             if token is not None:
                 header = {'Authorization': token}
                 resp, body = self.get('/foundation/REST/sessionservice/sessions/' + token + '/context', headers=header)
                 if body and 'availableSystems' in body:
+                    self.auth_try = 0
                     self.user = user
                     self.password = password
                     self.session_key = token
                     return
 
-            # this prevens re-auth attempt if auth fails
-            self.auth_try = 1
-            self.session_key = None
-
-            info = {'username': user, 'password': password}
+            info = {'username': user,
+                    'password': password,
+                    'adminLogin': False,
+                    'authLoginDomain': 'LOCAL'}
             self._auth_optional = None
 
             if optional:
@@ -184,8 +188,11 @@ class HTTPJSONRESTClient(httplib2.Http):
 
         """
         # delete the session on the 3Par
-        self.delete('/foundation/REST/sessionservice/sessions/%s' % self.session_key)
-        self.session_key = None
+        try:
+            self.delete('/foundation/REST/sessionservice/sessions/%s' % self.session_key)
+            self.session_key = None
+        except Exception as ex:
+            i = 10
 
     def get_timings(self):
         """
