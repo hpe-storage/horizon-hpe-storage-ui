@@ -35,9 +35,10 @@ except ImportError:
     import simplejson as json
 
 from ssmc_link_ui.api.common import exceptions
+from ssmc_link_ui.api.common import http
 
 
-class HTTPJSONRESTClient(httplib2.Http):
+class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
     """
     An HTTP REST Client that sends and recieves JSON data as the body of the
     HTTP request.
@@ -49,46 +50,6 @@ class HTTPJSONRESTClient(httplib2.Http):
     :type insecure: bool
 
     """
-
-    USER_AGENT = 'python-3parclient'
-    SESSION_COOKIE_NAME = 'Authorization'
-
-
-    def __init__(self, api_url, insecure=False, http_log_debug=True):
-        super(HTTPJSONRESTClient, self).__init__(
-            disable_ssl_certificate_validation=True)
-
-        self.session_key = None
-
-        # should be http://<Server:Port>/api/v1
-        self.set_url(api_url)
-        self.set_debug_flag(http_log_debug)
-
-        self.times = []  # [("item", starttime, endtime), ...]
-
-        # httplib2 overrides
-        self.force_exception_to_status_code = True
-        # self.disable_ssl_certificate_validation = insecure
-
-        self._logger = logging.getLogger(__name__)
-
-    def set_url(self, api_url):
-        # should be http://<Server:Port>/api/v1
-        self.api_url = api_url.rstrip('/')
-
-    def set_debug_flag(self, flag):
-        """
-        This turns on/off http request/response debugging output to console
-
-        :param flag: Set to True to enable debugging output
-        :type flag: bool
-
-        """
-        self.http_log_debug = flag
-        if self.http_log_debug:
-            ch = logging.StreamHandler()
-            #self._logger.setLevel(logging.DEBUG)
-            #self._logger.addHandler(ch)
 
     def getSessionKey(self):
         return self.session_key
@@ -246,86 +207,6 @@ class HTTPJSONRESTClient(httplib2.Http):
         except Exception as ex:
             i = 0
 
-    def get_timings(self):
-        """
-        Ths gives an array of the request timings since last reset_timings call
-        """
-        return self.times
-
-    def reset_timings(self):
-        """
-        This resets the request/response timings array
-        """
-        self.times = []
-
-    def _http_log_req(self, args, kwargs):
-        if not self.http_log_debug:
-            return
-
-        string_parts = ['curl -i']
-        for element in args:
-            if element in ('GET', 'POST'):
-                string_parts.append(' -X %s' % element)
-            else:
-                string_parts.append(' %s' % element)
-
-        for element in kwargs['headers']:
-            header = ' -H "%s: %s"' % (element, kwargs['headers'][element])
-            string_parts.append(header)
-
-        self._logger.debug("\nREQ: %s\n" % "".join(string_parts))
-        if 'body' in kwargs:
-            self._logger.debug("REQ BODY: %s\n" % (kwargs['body']))
-
-    def _http_log_resp(self, resp, body):
-        if not self.http_log_debug:
-            return
-        self._logger.debug("RESP:%s\n", pprint.pformat(resp))
-        self._logger.debug("RESP BODY:%s\n", body)
-
-    def request(self, *args, **kwargs):
-        """
-        This makes an HTTP Request to the 3Par server.
-        You should use get, post, delete instead.
-
-        """
-        if self.session_key and self.auth_try != 1:
-            kwargs.setdefault('headers', {})[self.SESSION_COOKIE_NAME] = \
-                self.session_key
-
-        kwargs.setdefault('headers', kwargs.get('headers', {}))
-        #kwargs['headers']['User-Agent'] = self.USER_AGENT
-        #kwargs['headers']['Accept'] = 'application/json'
-        if 'body' in kwargs:
-            kwargs['headers']['Content-Type'] = 'application/json'
-            kwargs['body'] = json.dumps(kwargs['body'])
-
-        self._http_log_req(args, kwargs)
-        resp, body = super(HTTPJSONRESTClient, self).request(*args, **kwargs)
-        self._http_log_resp(resp, body)
-
-        # Try and conver the body response to an object
-        # This assumes the body of the reply is JSON
-        if body:
-            try:
-                body = json.loads(body)
-            except ValueError:
-                pass
-        else:
-            body = None
-
-        if resp.status >= 400:
-            raise exceptions.from_response(resp, body)
-
-        return resp, body
-
-    def _time_request(self, url, method, **kwargs):
-        start_time = time.time()
-        resp, body = self.request(url, method, **kwargs)
-        self.times.append(("%s %s" % (method, url),
-                           start_time, time.time()))
-        return resp, body
-
     def _do_reauth(self, url, method, ex, **kwargs):
         # print("_do_reauth called")
         try:
@@ -355,95 +236,4 @@ class HTTPJSONRESTClient(httplib2.Http):
             # print("_CS_REQUEST HTTPForbidden")
             resp, body = self._do_reauth(url, method, ex, **kwargs)
             return resp, body
-
-    def get(self, url, **kwargs):
-        """
-        Make an HTTP GET request to the server.
-
-        .. code-block:: python
-
-            #example call
-            try {
-                headers, body = http.get('/volumes')
-            } except exceptions.HTTPUnauthorized as ex:
-                print "Not logged in"
-            }
-
-        :param url: The relative url from the 3PAR api_url
-        :type url: str
-
-        :returns: headers - dict of HTTP Response headers
-        :returns: body - the body of the response.  If the body was JSON, it
-                         will be an object
-        """
-        return self._cs_request(url, 'GET', **kwargs)
-
-    def post(self, url, **kwargs):
-        """
-        Make an HTTP POST request to the server.
-
-        .. code-block:: python
-
-            #example call
-            try {
-                info = {'name': 'new volume name', 'cpg': 'MyCPG',
-                        'sizeMiB': 300}
-                headers, body = http.post('/volumes', body=info)
-            } except exceptions.HTTPUnauthorized as ex:
-                print "Not logged in"
-            }
-
-        :param url: The relative url from the 3PAR api_url
-        :type url: str
-
-        :returns: headers - dict of HTTP Response headers
-        :returns: body - the body of the response.  If the body was JSON, it
-                         will be an object
-        """
-        return self._cs_request(url, 'POST', **kwargs)
-
-    def put(self, url, **kwargs):
-        """
-        Make an HTTP PUT request to the server.
-
-        .. code-block:: python
-
-            #example call
-            try {
-                info = {'name': 'something'}
-                headers, body = http.put('/volumes', body=info)
-            } except exceptions.HTTPUnauthorized as ex:
-                print "Not logged in"
-            }
-
-        :param url: The relative url from the 3PAR api_url
-        :type url: str
-
-        :returns: headers - dict of HTTP Response headers
-        :returns: body - the body of the response.  If the body was JSON,
-                         it will be an object
-        """
-        return self._cs_request(url, 'PUT', **kwargs)
-
-    def delete(self, url, **kwargs):
-        """
-        Make an HTTP DELETE request to the server.
-
-        .. code-block:: python
-
-            #example call
-            try {
-                headers, body = http.delete('/volumes/%s' % name)
-            } except exceptions.HTTPUnauthorized as ex:
-                print "Not logged in"
-            }
-
-        :param url: The relative url from the 3PAR api_url
-        :type url: str
-
-        :returns: headers - dict of HTTP Response headers
-        :returns: body - the body of the response.  If the body was JSON, it
-                         will be an object
-        """
-        return self._cs_request(url, 'DELETE', **kwargs)
 

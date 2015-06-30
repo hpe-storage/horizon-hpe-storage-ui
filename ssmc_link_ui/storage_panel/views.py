@@ -143,8 +143,8 @@ class LinkView(forms.ModalFormView):
                 url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
                         'overview/r/provisioning/REST/volumeviewservice/' \
                         'systems/' + self.ssmc_api.get_system_wwn() + \
-                        '/volumes/' + self.ssmc_api.get_volume_id() # + \
-                        # '?sessionToken=' + self.ssmc_api.get_session_key()
+                        '/volumes/' + self.ssmc_api.get_volume_id() + \
+                        '?sessionToken=' + self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time
                 # self.logout_SSMC_session(endpoint)
