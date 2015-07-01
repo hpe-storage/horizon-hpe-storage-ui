@@ -37,6 +37,7 @@ class CreateEndpointAction(tables.LinkAction):
     url = "horizon:admin:ssmc_link:create_endpoint"
     classes = ("ajax-modal",)
     icon = "plus"
+    policy_rules = (("volume", "volume:deep_link"),)
 
 
 class EditEndpointAction(tables.LinkAction):
@@ -45,10 +46,12 @@ class EditEndpointAction(tables.LinkAction):
     url = "horizon:admin:ssmc_link:edit_endpoint"
     classes = ("ajax-modal",)
     icon = "pencil"
+    policy_rules = (("volume", "volume:deep_link"),)
 
 
 class DeleteEndpointAction(tables.DeleteAction):
     name = "delete_endpoint"
+    policy_rules = (("volume", "volume:deep_link"),)
 
     @staticmethod
     def action_present(count):

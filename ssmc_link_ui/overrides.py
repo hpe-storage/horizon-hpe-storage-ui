@@ -67,7 +67,7 @@ class LaunchElementManager(tables.LinkAction):
     # launch in new window
     attrs = {"target": "_blank"}
 
-    # policy_rules = (("volume", "volume_extension:volume_manage"),)
+    policy_rules = (("volume", "volume:deep_link"),)
 
     def get_link_url(self, volume):
         link_url = reverse(self.url, args=[volume.id])

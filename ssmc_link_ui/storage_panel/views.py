@@ -128,6 +128,9 @@ class LinkView(forms.ModalFormView):
     @memoized.memoized_method
     def get_data(self):
         try:
+            # from openstack_dashboard import policy
+            # allowed = policy.check((("volume","volume:create"),), self.request)
+            # allowed = policy.check((("volume","volume:crXXeate"),), self.request)
             volume_id = self.kwargs['volume_id']
             volume = cinder.volume_get(self.request, volume_id)
 
