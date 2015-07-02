@@ -35,6 +35,7 @@ except ImportError:
 
 from ssmc_link_ui.api.common import http
 
+LOG = logging.getLogger(__name__)
 
 class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
     """
@@ -95,7 +96,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             self.user = user
             self.password = password
         except Exception as ex:
-            i = 10
+            LOG.error("Unable to create SSMC Authorization Token: %s\n", body)
+            self.session_key = None
 
     def getVolumeLink(self, name):
         self.auth_try = 1

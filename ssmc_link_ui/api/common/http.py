@@ -271,6 +271,29 @@ class HTTPJSONRESTClient(httplib2.Http):
         """
         return self._cs_request(url, 'PUT', **kwargs)
 
+    def patch(self, url, **kwargs):
+        """
+        Make an HTTP PATCH request to the server.
+
+        .. code-block:: python
+
+            #example call
+            try {
+                info = {'name': 'something'}
+                headers, body = http.patch('/volumes', body=info)
+            } except exceptions.HTTPUnauthorized as ex:
+                print "Not logged in"
+            }
+
+        :param url: The relative url from the 3PAR api_url
+        :type url: str
+
+        :returns: headers - dict of HTTP Response headers
+        :returns: body - the body of the response.  If the body was JSON,
+                         it will be an object
+        """
+        return self._cs_request(url, 'PATCH', **kwargs)
+
     def delete(self, url, **kwargs):
         """
         Make an HTTP DELETE request to the server.

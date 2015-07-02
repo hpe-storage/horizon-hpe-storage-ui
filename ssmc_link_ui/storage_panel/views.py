@@ -155,9 +155,10 @@ class LinkView(forms.ModalFormView):
                 return volume, url
 
         except ValueError as err:
+            url = reverse('horizon:admin:volumes:volumes_tab')
             exceptions.handle(self.request,
                               err.message,
-                              redirect=self.success_url)
+                              redirect=url)
         except Exception:
             exceptions.handle(self.request,
                               _('Unable to retrieve volume details.'),
@@ -220,9 +221,12 @@ class LinkView(forms.ModalFormView):
             # down, the timeouts makes this call even longer to complete
             self.ssmc_api.client_login()
 
-            self.ssmc_api.get_volume_info(volume.id)
-            ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
-            return endpt
+            if self.ssmc_api.get_session_key():
+                self.ssmc_api.get_volume_info(volume.id)
+                ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
+                return endpt
+            else:
+                raise ValueError("Unable to login to SSMC")
         else:
             raise ValueError("SSMC Endpoint does not exist for this backend host")
 
