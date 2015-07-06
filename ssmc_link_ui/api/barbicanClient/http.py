@@ -24,11 +24,6 @@
 
 """
 
-import logging
-import httplib2
-import time
-import pprint
-
 try:
     import json
 except ImportError:
@@ -57,7 +52,6 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
     def getSecretReference(self, token, host, type):
         # for right now, type = "-uname" or "-pwd"
         try:
-            sref = None
             header = {'X-Auth-Token': token}
             resp, body = self.get('/v1/secrets?name=' + 'ssmc-' + host + type, headers=header)
             if body and 'total' in body:
@@ -74,12 +68,12 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             return None
 
         except Exception as ex:
-            i = 10
+            exceptions.handle(self.request,
+                              ('Unable to get Barbican secret.'))
 
     def addSecret(self, token, host, secret, type):
         # for right now, type = "-uname" or "-pwd"
         self.auth_try = 1
-        sref = None
         header = {'X-Auth-Token': token}
         try:
             # create secret
@@ -91,11 +85,14 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             }
             resp, body = self.post('/v1/secrets', headers=header, body=info)
         except Exception as ex:
-            i = 0
+            exceptions.handle(self.request,
+                              ('Unable to add Barbican secret.'))
 
     def getCredentials(self, token, host):
         try:
             self.auth_try = 1
+            pwd = None
+            uname = None
 
             # get uname
             sref = self.getSecretReference(token, host, "-uname")
@@ -119,13 +116,11 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
                 pwd = body
 
-            if uname and pwd:
-                return uname, pwd
-
-            return None
+            return uname, pwd
 
         except Exception as ex:
-            i = 0
+            exceptions.handle(self.request,
+                              ('Unable to get Barbican credentials.'))
 
     def addCredentials(self, token, host, uname, pwd):
         self.auth_try = 1
@@ -150,7 +145,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             resp, body = self.post('/v1/secrets', headers=header, body=info)
 
         except Exception as ex:
-            i = 10
+            exceptions.handle(self.request,
+                              ('Unable to add Barbican credentials.'))
 
     def updateUserName(self, token, host, uname):
         # cannot modify secrets, so delete and then add
@@ -164,7 +160,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                 # add secret
                 self.addSecret(token, host, uname, '-uname')
             except Exception as ex:
-                i = 10
+                exceptions.handle(self.request,
+                                  ('Unable to update Barbican user name.'))
 
     def updatePassword(self, token, host, pwd):
         # cannot modify secrets, so delete and then add
@@ -178,7 +175,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                 # add secret
                 self.addSecret(token, host, pwd, '-pwd')
             except Exception as ex:
-                i = 10
+                exceptions.handle(self.request,
+                                  ('Unable to update Barbican password.'))
 
     def deleteCredentials(self, token, host):
         try:
@@ -205,7 +203,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             return None
 
         except Exception as ex:
-            i = 0
+            exceptions.handle(self.request,
+                              ('Unable to delete Barbican credentials.'))
 
     def _do_reauth(self, url, method, ex, **kwargs):
         # print("_do_reauth called")

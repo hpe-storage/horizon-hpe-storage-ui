@@ -24,12 +24,6 @@
 
 """
 
-import logging
-import httplib2
-import time
-import pprint
-import re
-
 try:
     import json
 except ImportError:
@@ -70,4 +64,5 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                             backends.append(backend)
             return backends
         except Exception as ex:
-            i = 10
+            exceptions.handle(self.request,
+                              ('Unable to get Cinder pools.'))

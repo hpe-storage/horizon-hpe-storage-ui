@@ -24,12 +24,6 @@
 
 """
 
-import logging
-import httplib2
-import time
-import pprint
-import re
-
 try:
     import json
 except ImportError:
@@ -127,7 +121,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
             return None
         except Exception as ex:
-            i = 0
+            exceptions.handle(self.request,
+                              ('Unable to get SSMC Endpoint for host.'))
 
     def getSSMCEndpointForServiceName(self, service_name):
         # first get service id
@@ -210,7 +205,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
             return endpoints
         except Exception as ex:
-            i = 10
+            exceptions.handle(self.request,
+                              ('Unable to get SSMC Endpoints.'))
 
     def addSSMCEndpoint(self, service_name, endpoint):
         # first add service
@@ -257,7 +253,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             }
             resp, body = self.patch('/v3/endpoints/' + endpt_id, headers=header, body=info)
         except Exception as ex:
-            i = 0
+            exceptions.handle(self.request,
+                              ('Unable to update SSMC Endpoint URL.'))
 
     def deleteSSMCEndpoint(self, service_id):
         header = {'X-Auth-Token': self.getSessionKey()}
@@ -269,7 +266,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             # now delete the service
             resp = self.delete('/v3/services/' + service_id, headers=header)
         except Exception as ex:
-            i = 10
+            exceptions.handle(self.request,
+                              ('Unable to delete SSMC Endpoint.'))
 
     def _reauth(self):
         self.authenticateKeystone(self.user, self.password, self._auth_optional)

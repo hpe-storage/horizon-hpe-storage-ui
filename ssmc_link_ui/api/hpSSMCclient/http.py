@@ -25,14 +25,13 @@
 """
 
 import logging
-import time
-import pprint
 
 try:
     import json
 except ImportError:
     import simplejson as json
 
+from ssmc_link_ui.api.common import exceptions
 from ssmc_link_ui.api.common import http
 
 LOG = logging.getLogger(__name__)
@@ -153,4 +152,5 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             self.delete('/foundation/REST/sessionservice/sessions/%s' % self.session_key)
             self.session_key = None
         except Exception as ex:
-            i = 10
+            exceptions.handle(self.request,
+                              ('Unable to log-off SSMC.'))
