@@ -20,7 +20,7 @@ by /etc/cinder/cinder.conf).
 Installation instructions
 -------------------------
 
-Begin by cloning the horizon-ssmc-link repository to your OpenStack root directory:
+Begin by cloning the horizon-ssmc-link repository to your OpenStack root directory::
 
     git clone https://github.com/openstack/horizon
     git clone https://github.com/hp-storage/horizon_ssmc_link.git
