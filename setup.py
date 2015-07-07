@@ -26,5 +26,8 @@ except ImportError:
     pass
 
 setuptools.setup(
-    setup_requires=['pbr'],
-    pbr=True)
+    name='horizon-ssmc-link',
+    version='0.0.1',
+    url='https://github.com/hp-storage/horizon-ssmc-link',
+    install_requires=[],
+)
