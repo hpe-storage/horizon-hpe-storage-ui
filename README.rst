@@ -17,6 +17,12 @@ these tabs will be labeled "Backend SSMC Endpoints", which will allow an admin u
 to associate an HP 3PAR SSMC instance with an OpenStack storage backend (as defined
 by /etc/cinder/cinder.conf).
 
+Requirements
+------------
+
+The OpenStack Barbican service is required for this plug-in.
+
+
 Installation instructions
 -------------------------
 
