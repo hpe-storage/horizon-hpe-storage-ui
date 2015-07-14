@@ -29,7 +29,7 @@ Installation instructions
 Begin by cloning the horizon-ssmc-link repository to your OpenStack root directory::
 
     git clone https://github.com/openstack/horizon
-    git clone https://github.com/hp-storage/horizon_ssmc_link.git
+    git clone https://github.com/hp-storage/horizon-ssmc-link.git
 
 Create a virtual environment and install Horizon dependencies::
 
