@@ -34,7 +34,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from ssmc_link_ui.api.common import exceptions
+from horizon_ssmc_link.api.common import exceptions
 
 
 class HTTPJSONRESTClient(httplib2.Http):

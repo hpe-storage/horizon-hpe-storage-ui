@@ -31,8 +31,8 @@ try:
 except ImportError:
     import simplejson as json
 
-from ssmc_link_ui.api.common import exceptions
-from ssmc_link_ui.api.common import http
+from horizon_ssmc_link.api.common import exceptions
+from horizon_ssmc_link.api.common import http
 
 LOG = logging.getLogger(__name__)
 

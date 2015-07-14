@@ -55,7 +55,7 @@ Install horizon-ssmc-link with all dependencies in your virtual environment::
 
 To enable it in Horizon::
 
-    cp ../horizon-ssmc-link/ssmc-link-ui/enabled/_110_ssmc_link_*.py openstack_dashboard/local/enabled
+    cp ../horizon-ssmc-link/horizon-ssmc-link/enabled/_110_ssmc_link_*.py openstack_dashboard/local/enabled
 
 Starting the app
 ----------------

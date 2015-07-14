@@ -18,10 +18,10 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import tabs
 
-from ssmc_link_ui.storage_panel import tables
+from horizon_ssmc_link.storage_panel import tables
 
-import ssmc_link_ui.api.keystone_api as keystone
-import ssmc_link_ui.api.barbican_api as barbican
+import horizon_ssmc_link.api.keystone_api as keystone
+import horizon_ssmc_link.api.barbican_api as barbican
 
 
 class EndpointsTab(tabs.TableTab):

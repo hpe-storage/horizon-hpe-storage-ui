@@ -35,10 +35,9 @@ import logging
 LOG = logging.getLogger(__name__)
 import webbrowser
 
-import ssmc_link_ui.api.keystone_api as keystone
-import ssmc_link_ui.api.barbican_api as barbican
-import ssmc_link_ui.api.cinder_api as cinder
-
+import horizon_ssmc_link.api.keystone_api as keystone
+import horizon_ssmc_link.api.barbican_api as barbican
+import horizon_ssmc_link.api.cinder_api as cinder
 
 
 class CreateEndpoint(forms.SelfHandlingForm):
