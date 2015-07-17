@@ -17,7 +17,7 @@ from django.conf.urls import url
 #     import views
 from horizon_ssmc_link.storage_panel import views
 
-VIEWS_MOD = ('ssmc_link_ui.storage_panel.views')
+VIEWS_MOD = ('horizon_ssmc_link.storage_panel.views')
 # VIEWS_MOD = ('dashboards.admin.volumes.volumes.views')
 
 urlpatterns = patterns(
