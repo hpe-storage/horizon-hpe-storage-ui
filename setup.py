@@ -39,4 +39,6 @@ setuptools.setup(
     author='HP Storage Cloud Team',
     author_email='richard.hagarty@hp.com',
     install_requires=[],
+    setup_requires=['pbr'],
+    pbr=True
 )
