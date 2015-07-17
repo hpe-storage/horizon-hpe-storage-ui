@@ -99,6 +99,12 @@ class HPSSMCClient(object):
     def getVolumeRef(self):
         return self.http.getVolumeRef()
 
+    def getVolumeCPG(self):
+        return self.http.getVolumeCPG()
+
+    def getVolumeDomain(self):
+        return self.http.getVolumeDomain()
+
     def getVolumeID(self):
         return self.http.getVolumeID()
 

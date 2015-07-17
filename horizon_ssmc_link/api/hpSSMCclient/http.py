@@ -110,12 +110,25 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                 if 'members' in body:
                     members = body['members']
                     member = members[0]
-                    if member and 'links' in member:
-                        links = member['links']
-                        self_link = links[0]
-                        if self_link and 'href' in self_link:
-                            self.href = self_link['href']
+                    if member:
+                        if 'links' in member:
+                            # store off link to this volume
+                            links = member['links']
+                            self_link = links[0]
+                            if self_link and 'href' in self_link:
+                                self.href = self_link['href']
+                        if 'systemWWN' in member:
+                            # store off link to array WWN for this volume
+                            self.systemWWN = member['systemWWN']
+                        if 'userCpgUid' in member:
+                            # store off link to CPG for this volume
+                            self.cpg = member['userCpgUid']
+                        if 'domainUID' in member:
+                            # store off link to Domain for this volume
+                            self.domain = member['domainUID']
 
+
+    # NOT NEEDED???
     def getVolumeDetails(self):
         self.auth_try = 1
         info = {'Authorization': self.session_key}
@@ -132,6 +145,12 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
     def getVolumeRef(self):
         return self.href
+
+    def getVolumeCPG(self):
+        return self.cpg
+
+    def getVolumeDomain(self):
+        return self.domain
 
     def getVolumeID(self):
         return self.uid

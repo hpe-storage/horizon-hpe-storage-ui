@@ -105,13 +105,13 @@ class EditEndpointView(forms.ModalFormView):
 
 ssmc_tokens = {}     # keep tokens for performance
 
-class LinkView(forms.ModalFormView):
+class LinkVolumeView(forms.ModalFormView):
     form_class = deeplink_forms.LinkToSSMC
     modal_header = _("Link to SSMC")
     modal_id = "link_to_SSMC_modal"
     template_name = 'link_and_launch.html'
     submit_label = _("Link")
-    submit_url = 'horizon:admin:ssmc_link:link_to'
+    submit_url = 'horizon:admin:ssmc_link:link_to_volume'
     success_url = 'horizon:admin:volumes:volumes_tab'
     page_title = _("Linking to SSMC...")
     keystone_api = None
@@ -119,7 +119,7 @@ class LinkView(forms.ModalFormView):
     ssmc_api = None
 
     def get_context_data(self, **kwargs):
-        context = super(LinkView, self).get_context_data(**kwargs)
+        context = super(LinkVolumeView, self).get_context_data(**kwargs)
         args = (self.kwargs['volume_id'],)
         context['submit_url'] = reverse(self.submit_url, args=args)
         context['link_url'] = kwargs['form'].initial['link_url']
@@ -143,10 +143,296 @@ class LinkView(forms.ModalFormView):
             LOG.info(("Session Token = %s") % self.ssmc_api.get_session_key())
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
-                url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
-                        'overview/r/provisioning/REST/volumeviewservice/' \
+                # url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
+                #         'capacity/r/provisioning/REST/volumeviewservice/' \
+                #         'systems/' + self.ssmc_api.get_system_wwn() + \
+                #         '/volumes/' + self.ssmc_api.get_volume_id() + \
+                #         '?sessionToken=' + self.ssmc_api.get_session_key()
+                ref = urlparse(self.ssmc_api.get_volume_ref())
+                url = "0;url=" + endpoint + \
+                      '#/virtual-volumes/show/capacity/r' + \
+                        ref.path + '?sessionToken=' + self.ssmc_api.get_session_key()
+
+                # USE if we want user to log in every time
+                # self.logout_SSMC_session(endpoint)
+                LOG.info(("SSMC URL = %s") % url)
+                return volume, url
+
+        except ValueError as err:
+            url = reverse('horizon:admin:volumes:volumes_tab')
+            exceptions.handle(self.request,
+                              err.message,
+                              redirect=url)
+        except Exception:
+            exceptions.handle(self.request,
+                              _('Unable to retrieve volume details.'),
+                              redirect=self.success_url)
+
+    def get_initial(self):
+        volume, link_url = self.get_data()
+        return {'volume_id': self.kwargs["volume_id"],
+                'name': volume.name,
+                'link_url': link_url}
+
+    def get_3par_vol_name(self, id):
+        uuid_str = id.replace("-", "")
+        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
+        vol_encoded = base64.b64encode(vol_uuid.bytes)
+
+        # 3par doesn't allow +, nor /
+        vol_encoded = vol_encoded.replace('+', '.')
+        vol_encoded = vol_encoded.replace('/', '-')
+        # strip off the == as 3par doesn't like those.
+        vol_encoded = vol_encoded.replace('=', '')
+        return "osv-%s" % vol_encoded
+
+    def get_SSMC_endpoint(self, volume):
+        if self.keystone_api == None:
+            self.keystone_api = keystone.KeystoneAPI()
+            self.keystone_api.do_setup(None)
+            self.keystone_api.client_login()
+
+        host_name = getattr(volume, 'os-vol-host-attr:host', None)
+        # pull out host from host name (comes between @ and #)
+        found = re.search('@(.+?)#', host_name)
+        if found:
+            host = found.group(1)
+        else:
+            return None
+        endpt = self.keystone_api.get_ssmc_endpoint_for_host(host)
+
+        if self.barbican_api == None:
+            self.barbican_api = barbican.BarbicanAPI()
+            self.barbican_api.do_setup(None)
+            # barbican_api.client_login()
+        uname, pwd = self.barbican_api.get_credentials(self.keystone_api.get_session_key(),
+                                                  host)
+
+        if endpt:
+            # attempt to use previous token for the SSMC endpoint, if it exists
+            global ssmc_tokens
+            ssmc_token = None
+            # pull ip out of SSMC endpoint
+            parsed = urlparse(endpt)
+            ssmc_ip = parsed.hostname
+            if ssmc_ip in ssmc_tokens:
+                ssmc_token = ssmc_tokens[ssmc_ip]
+
+            self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
+            self.ssmc_api.do_setup(None)
+            # this call is the bottle neck. Note that SSMC must attempt to
+            # login to each of the arrays it manages. And if one of those is
+            # down, the timeouts makes this call even longer to complete
+            self.ssmc_api.client_login()
+
+            if self.ssmc_api.get_session_key():
+                self.ssmc_api.get_volume_info(volume.id)
+                ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
+                return endpt
+            else:
+                raise ValueError("Unable to login to SSMC")
+        else:
+            raise ValueError("SSMC Endpoint does not exist for this backend host")
+
+        return None
+
+    def logout_SSMC_session(self, endpt):
+        # logout of session
+        self.ssmc_api.client_logout()
+
+        global ssmc_tokens
+        ssmc_token = None
+        # pull ip out of SSMC endpoint
+        parsed = urlparse(endpt)
+        ssmc_ip = parsed.hostname
+        if ssmc_ip in ssmc_tokens:
+            # remove reference to this token, so we start fresh next time
+            del ssmc_tokens[ssmc_ip]
+
+
+class LinkVolumeCPGView(forms.ModalFormView):
+    form_class = deeplink_forms.LinkToSSMC
+    modal_header = _("Link to SSMC")
+    modal_id = "link_to_SSMC_modal"
+    template_name = 'link_and_launch.html'
+    submit_label = _("Link")
+    submit_url = 'horizon:admin:ssmc_link:link_to_cpg'
+    success_url = 'horizon:admin:volumes:volumes_tab'
+    page_title = _("Linking to SSMC...")
+    keystone_api = None
+    barbican_api = None
+    ssmc_api = None
+
+    def get_context_data(self, **kwargs):
+        context = super(LinkVolumeCPGView, self).get_context_data(**kwargs)
+        args = (self.kwargs['volume_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        context['link_url'] = kwargs['form'].initial['link_url']
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            # from openstack_dashboard import policy
+            # allowed = policy.check((("volume","volume:create"),), self.request)
+            # allowed = policy.check((("volume","volume:crXXeate"),), self.request)
+            volume_id = self.kwargs['volume_id']
+            volume = cinder.volume_get(self.request, volume_id)
+
+            volume_name = self.get_3par_vol_name(volume_id)
+            LOG.info(("!!!!!!!!!! GET ELEMENT MANAGER FOR VOLUME = %s") % volume_name)
+            formatted_vol_name = format(volume_name)
+
+            # get volume data to build URI to SSMC
+            endpoint = self.get_SSMC_endpoint(volume)
+            LOG.info(("Session Token = %s") % self.ssmc_api.get_session_key())
+            if endpoint:
+                # "0:url=" is needed for redirect tag for page
+                url = "0;url=" + endpoint + '#/cpgs/show/'\
+                        'overview/r/provisioning/REST/cpgviewservice/' \
                         'systems/' + self.ssmc_api.get_system_wwn() + \
-                        '/volumes/' + self.ssmc_api.get_volume_id() + \
+                        '/cpgs/' + self.ssmc_api.get_volume_cpg() + \
+                        '?sessionToken=' + self.ssmc_api.get_session_key()
+
+                # USE if we want user to log in every time
+                # self.logout_SSMC_session(endpoint)
+                LOG.info(("SSMC URL = %s") % url)
+                return volume, url
+
+        except ValueError as err:
+            url = reverse('horizon:admin:volumes:volumes_tab')
+            exceptions.handle(self.request,
+                              err.message,
+                              redirect=url)
+        except Exception:
+            exceptions.handle(self.request,
+                              _('Unable to retrieve volume details.'),
+                              redirect=self.success_url)
+
+    def get_initial(self):
+        volume, link_url = self.get_data()
+        return {'volume_id': self.kwargs["volume_id"],
+                'name': volume.name,
+                'link_url': link_url}
+
+    def get_3par_vol_name(self, id):
+        uuid_str = id.replace("-", "")
+        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
+        vol_encoded = base64.b64encode(vol_uuid.bytes)
+
+        # 3par doesn't allow +, nor /
+        vol_encoded = vol_encoded.replace('+', '.')
+        vol_encoded = vol_encoded.replace('/', '-')
+        # strip off the == as 3par doesn't like those.
+        vol_encoded = vol_encoded.replace('=', '')
+        return "osv-%s" % vol_encoded
+
+    def get_SSMC_endpoint(self, volume):
+        if self.keystone_api == None:
+            self.keystone_api = keystone.KeystoneAPI()
+            self.keystone_api.do_setup(None)
+            self.keystone_api.client_login()
+
+        host_name = getattr(volume, 'os-vol-host-attr:host', None)
+        # pull out host from host name (comes between @ and #)
+        found = re.search('@(.+?)#', host_name)
+        if found:
+            host = found.group(1)
+        else:
+            return None
+        endpt = self.keystone_api.get_ssmc_endpoint_for_host(host)
+
+        if self.barbican_api == None:
+            self.barbican_api = barbican.BarbicanAPI()
+            self.barbican_api.do_setup(None)
+            # barbican_api.client_login()
+        uname, pwd = self.barbican_api.get_credentials(self.keystone_api.get_session_key(),
+                                                  host)
+
+        if endpt:
+            # attempt to use previous token for the SSMC endpoint, if it exists
+            global ssmc_tokens
+            ssmc_token = None
+            # pull ip out of SSMC endpoint
+            parsed = urlparse(endpt)
+            ssmc_ip = parsed.hostname
+            if ssmc_ip in ssmc_tokens:
+                ssmc_token = ssmc_tokens[ssmc_ip]
+
+            self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
+            self.ssmc_api.do_setup(None)
+            # this call is the bottle neck. Note that SSMC must attempt to
+            # login to each of the arrays it manages. And if one of those is
+            # down, the timeouts makes this call even longer to complete
+            self.ssmc_api.client_login()
+
+            if self.ssmc_api.get_session_key():
+                self.ssmc_api.get_volume_info(volume.id)
+                ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
+                return endpt
+            else:
+                raise ValueError("Unable to login to SSMC")
+        else:
+            raise ValueError("SSMC Endpoint does not exist for this backend host")
+
+        return None
+
+    def logout_SSMC_session(self, endpt):
+        # logout of session
+        self.ssmc_api.client_logout()
+
+        global ssmc_tokens
+        ssmc_token = None
+        # pull ip out of SSMC endpoint
+        parsed = urlparse(endpt)
+        ssmc_ip = parsed.hostname
+        if ssmc_ip in ssmc_tokens:
+            # remove reference to this token, so we start fresh next time
+            del ssmc_tokens[ssmc_ip]
+
+
+class LinkVolumeDomainView(forms.ModalFormView):
+    form_class = deeplink_forms.LinkToSSMC
+    modal_header = _("Link to SSMC")
+    modal_id = "link_to_SSMC_modal"
+    template_name = 'link_and_launch.html'
+    submit_label = _("Link")
+    submit_url = 'horizon:admin:ssmc_link:link_to_domain'
+    success_url = 'horizon:admin:volumes:volumes_tab'
+    page_title = _("Linking to SSMC...")
+    keystone_api = None
+    barbican_api = None
+    ssmc_api = None
+
+    def get_context_data(self, **kwargs):
+        context = super(LinkVolumeDomainView, self).get_context_data(**kwargs)
+        args = (self.kwargs['volume_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        context['link_url'] = kwargs['form'].initial['link_url']
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            # from openstack_dashboard import policy
+            # allowed = policy.check((("volume","volume:create"),), self.request)
+            # allowed = policy.check((("volume","volume:crXXeate"),), self.request)
+            volume_id = self.kwargs['volume_id']
+            volume = cinder.volume_get(self.request, volume_id)
+
+            volume_name = self.get_3par_vol_name(volume_id)
+            LOG.info(("!!!!!!!!!! GET ELEMENT MANAGER FOR VOLUME = %s") % volume_name)
+            formatted_vol_name = format(volume_name)
+
+            # get volume data to build URI to SSMC
+            endpoint = self.get_SSMC_endpoint(volume)
+            LOG.info(("Session Token = %s") % self.ssmc_api.get_session_key())
+            if endpoint:
+                # "0:url=" is needed for redirect tag for page
+                url = "0;url=" + endpoint + '#/domains/show/'\
+                        'overview/r/security/REST/domainviewservice/' \
+                        'systems/' + self.ssmc_api.get_system_wwn() + \
+                        '/domains/' + self.ssmc_api.get_volume_domain() + \
                         '?sessionToken=' + self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time

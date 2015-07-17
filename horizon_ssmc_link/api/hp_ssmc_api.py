@@ -116,13 +116,16 @@ class HPSSMC(object):
         self.client.getVolumeLink(self._get_3par_vol_name(volume_id))
         LOG.debug("   href = " + self.client.getVolumeRef())
 
-        LOG.debug("Requesting VOLUME DETAILS from SSMC")
-        self.client.getVolumeDetails()
-        LOG.debug("   uuid = " + self.client.getVolumeID())
-        LOG.debug("   system WWN = " + self.client.getSystemWWN())
+        # LOG.debug("Requesting VOLUME DETAILS from SSMC")
+        # self.client.getVolumeDetails()
+        # LOG.debug("   uuid = " + self.client.getVolumeID())
+        # LOG.debug("   system WWN = " + self.client.getSystemWWN())
 
     def get_session_key(self):
         return self.client.getSessionKey()
+
+    def get_volume_ref(self):
+        return self.client.getVolumeRef()
 
     def get_volume_id(self):
         return self.client.getVolumeID()
@@ -130,3 +133,8 @@ class HPSSMC(object):
     def get_system_wwn(self):
         return self.client.getSystemWWN()
 
+    def get_volume_cpg(self):
+        return self.client.getVolumeCPG()
+
+    def get_volume_domain(self):
+        return self.client.getVolumeDomain()
