@@ -105,7 +105,85 @@ class EditEndpointView(forms.ModalFormView):
 
 ssmc_tokens = {}     # keep tokens for performance
 
-class LinkVolumeView(forms.ModalFormView):
+class BaseLinkView(forms.ModalFormView):
+    def get_3par_vol_name(self, id):
+        uuid_str = id.replace("-", "")
+        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
+        vol_encoded = base64.b64encode(vol_uuid.bytes)
+
+        # 3par doesn't allow +, nor /
+        vol_encoded = vol_encoded.replace('+', '.')
+        vol_encoded = vol_encoded.replace('/', '-')
+        # strip off the == as 3par doesn't like those.
+        vol_encoded = vol_encoded.replace('=', '')
+        return "osv-%s" % vol_encoded
+
+    def get_SSMC_endpoint(self, volume):
+        if self.keystone_api == None:
+            LOG.info(("!!!!!!!!!! GET KEYSTONE TOKEN FOR VOL = %s") % volume.name)
+            self.keystone_api = keystone.KeystoneAPI()
+            self.keystone_api.do_setup(None)
+            self.keystone_api.client_login()
+
+        host_name = getattr(volume, 'os-vol-host-attr:host', None)
+        # pull out host from host name (comes between @ and #)
+        found = re.search('@(.+?)#', host_name)
+        if found:
+            host = found.group(1)
+        else:
+            return None
+        endpt = self.keystone_api.get_ssmc_endpoint_for_host(host)
+
+        if self.barbican_api == None:
+            self.barbican_api = barbican.BarbicanAPI()
+            self.barbican_api.do_setup(None)
+            # barbican_api.client_login()
+        uname, pwd = self.barbican_api.get_credentials(self.keystone_api.get_session_key(),
+                                                  host)
+
+        if endpt:
+            # attempt to use previous token for the SSMC endpoint, if it exists
+            global ssmc_tokens
+            ssmc_token = None
+            # pull ip out of SSMC endpoint
+            parsed = urlparse(endpt)
+            ssmc_ip = parsed.hostname
+            if ssmc_ip in ssmc_tokens:
+                ssmc_token = ssmc_tokens[ssmc_ip]
+
+            self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
+            self.ssmc_api.do_setup(None)
+            # this call is the bottle neck. Note that SSMC must attempt to
+            # login to each of the arrays it manages. And if one of those is
+            # down, the timeouts makes this call even longer to complete
+            self.ssmc_api.client_login()
+
+            if self.ssmc_api.get_session_key():
+                self.ssmc_api.get_volume_info(volume.id)
+                ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
+                return endpt
+            else:
+                raise ValueError("Unable to login to SSMC")
+        else:
+            raise ValueError("SSMC Endpoint does not exist for this backend host")
+
+        return None
+
+    def logout_SSMC_session(self, endpt):
+        # logout of session
+        self.ssmc_api.client_logout()
+
+        global ssmc_tokens
+        ssmc_token = None
+        # pull ip out of SSMC endpoint
+        parsed = urlparse(endpt)
+        ssmc_ip = parsed.hostname
+        if ssmc_ip in ssmc_tokens:
+            # remove reference to this token, so we start fresh next time
+            del ssmc_tokens[ssmc_ip]
+
+
+class LinkVolumeView(BaseLinkView):
     form_class = deeplink_forms.LinkToSSMC
     modal_header = _("Link to SSMC")
     modal_id = "link_to_SSMC_modal"
@@ -174,83 +252,8 @@ class LinkVolumeView(forms.ModalFormView):
                 'name': volume.name,
                 'link_url': link_url}
 
-    def get_3par_vol_name(self, id):
-        uuid_str = id.replace("-", "")
-        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
-        vol_encoded = base64.b64encode(vol_uuid.bytes)
 
-        # 3par doesn't allow +, nor /
-        vol_encoded = vol_encoded.replace('+', '.')
-        vol_encoded = vol_encoded.replace('/', '-')
-        # strip off the == as 3par doesn't like those.
-        vol_encoded = vol_encoded.replace('=', '')
-        return "osv-%s" % vol_encoded
-
-    def get_SSMC_endpoint(self, volume):
-        if self.keystone_api == None:
-            self.keystone_api = keystone.KeystoneAPI()
-            self.keystone_api.do_setup(None)
-            self.keystone_api.client_login()
-
-        host_name = getattr(volume, 'os-vol-host-attr:host', None)
-        # pull out host from host name (comes between @ and #)
-        found = re.search('@(.+?)#', host_name)
-        if found:
-            host = found.group(1)
-        else:
-            return None
-        endpt = self.keystone_api.get_ssmc_endpoint_for_host(host)
-
-        if self.barbican_api == None:
-            self.barbican_api = barbican.BarbicanAPI()
-            self.barbican_api.do_setup(None)
-            # barbican_api.client_login()
-        uname, pwd = self.barbican_api.get_credentials(self.keystone_api.get_session_key(),
-                                                  host)
-
-        if endpt:
-            # attempt to use previous token for the SSMC endpoint, if it exists
-            global ssmc_tokens
-            ssmc_token = None
-            # pull ip out of SSMC endpoint
-            parsed = urlparse(endpt)
-            ssmc_ip = parsed.hostname
-            if ssmc_ip in ssmc_tokens:
-                ssmc_token = ssmc_tokens[ssmc_ip]
-
-            self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
-            self.ssmc_api.do_setup(None)
-            # this call is the bottle neck. Note that SSMC must attempt to
-            # login to each of the arrays it manages. And if one of those is
-            # down, the timeouts makes this call even longer to complete
-            self.ssmc_api.client_login()
-
-            if self.ssmc_api.get_session_key():
-                self.ssmc_api.get_volume_info(volume.id)
-                ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
-                return endpt
-            else:
-                raise ValueError("Unable to login to SSMC")
-        else:
-            raise ValueError("SSMC Endpoint does not exist for this backend host")
-
-        return None
-
-    def logout_SSMC_session(self, endpt):
-        # logout of session
-        self.ssmc_api.client_logout()
-
-        global ssmc_tokens
-        ssmc_token = None
-        # pull ip out of SSMC endpoint
-        parsed = urlparse(endpt)
-        ssmc_ip = parsed.hostname
-        if ssmc_ip in ssmc_tokens:
-            # remove reference to this token, so we start fresh next time
-            del ssmc_tokens[ssmc_ip]
-
-
-class LinkVolumeCPGView(forms.ModalFormView):
+class LinkVolumeCPGView(BaseLinkView):
     form_class = deeplink_forms.LinkToSSMC
     modal_header = _("Link to SSMC")
     modal_id = "link_to_SSMC_modal"
@@ -315,83 +318,8 @@ class LinkVolumeCPGView(forms.ModalFormView):
                 'name': volume.name,
                 'link_url': link_url}
 
-    def get_3par_vol_name(self, id):
-        uuid_str = id.replace("-", "")
-        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
-        vol_encoded = base64.b64encode(vol_uuid.bytes)
 
-        # 3par doesn't allow +, nor /
-        vol_encoded = vol_encoded.replace('+', '.')
-        vol_encoded = vol_encoded.replace('/', '-')
-        # strip off the == as 3par doesn't like those.
-        vol_encoded = vol_encoded.replace('=', '')
-        return "osv-%s" % vol_encoded
-
-    def get_SSMC_endpoint(self, volume):
-        if self.keystone_api == None:
-            self.keystone_api = keystone.KeystoneAPI()
-            self.keystone_api.do_setup(None)
-            self.keystone_api.client_login()
-
-        host_name = getattr(volume, 'os-vol-host-attr:host', None)
-        # pull out host from host name (comes between @ and #)
-        found = re.search('@(.+?)#', host_name)
-        if found:
-            host = found.group(1)
-        else:
-            return None
-        endpt = self.keystone_api.get_ssmc_endpoint_for_host(host)
-
-        if self.barbican_api == None:
-            self.barbican_api = barbican.BarbicanAPI()
-            self.barbican_api.do_setup(None)
-            # barbican_api.client_login()
-        uname, pwd = self.barbican_api.get_credentials(self.keystone_api.get_session_key(),
-                                                  host)
-
-        if endpt:
-            # attempt to use previous token for the SSMC endpoint, if it exists
-            global ssmc_tokens
-            ssmc_token = None
-            # pull ip out of SSMC endpoint
-            parsed = urlparse(endpt)
-            ssmc_ip = parsed.hostname
-            if ssmc_ip in ssmc_tokens:
-                ssmc_token = ssmc_tokens[ssmc_ip]
-
-            self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
-            self.ssmc_api.do_setup(None)
-            # this call is the bottle neck. Note that SSMC must attempt to
-            # login to each of the arrays it manages. And if one of those is
-            # down, the timeouts makes this call even longer to complete
-            self.ssmc_api.client_login()
-
-            if self.ssmc_api.get_session_key():
-                self.ssmc_api.get_volume_info(volume.id)
-                ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
-                return endpt
-            else:
-                raise ValueError("Unable to login to SSMC")
-        else:
-            raise ValueError("SSMC Endpoint does not exist for this backend host")
-
-        return None
-
-    def logout_SSMC_session(self, endpt):
-        # logout of session
-        self.ssmc_api.client_logout()
-
-        global ssmc_tokens
-        ssmc_token = None
-        # pull ip out of SSMC endpoint
-        parsed = urlparse(endpt)
-        ssmc_ip = parsed.hostname
-        if ssmc_ip in ssmc_tokens:
-            # remove reference to this token, so we start fresh next time
-            del ssmc_tokens[ssmc_ip]
-
-
-class LinkVolumeDomainView(forms.ModalFormView):
+class LinkVolumeDomainView(BaseLinkView):
     form_class = deeplink_forms.LinkToSSMC
     modal_header = _("Link to SSMC")
     modal_id = "link_to_SSMC_modal"
@@ -455,79 +383,3 @@ class LinkVolumeDomainView(forms.ModalFormView):
         return {'volume_id': self.kwargs["volume_id"],
                 'name': volume.name,
                 'link_url': link_url}
-
-    def get_3par_vol_name(self, id):
-        uuid_str = id.replace("-", "")
-        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
-        vol_encoded = base64.b64encode(vol_uuid.bytes)
-
-        # 3par doesn't allow +, nor /
-        vol_encoded = vol_encoded.replace('+', '.')
-        vol_encoded = vol_encoded.replace('/', '-')
-        # strip off the == as 3par doesn't like those.
-        vol_encoded = vol_encoded.replace('=', '')
-        return "osv-%s" % vol_encoded
-
-    def get_SSMC_endpoint(self, volume):
-        if self.keystone_api == None:
-            self.keystone_api = keystone.KeystoneAPI()
-            self.keystone_api.do_setup(None)
-            self.keystone_api.client_login()
-
-        host_name = getattr(volume, 'os-vol-host-attr:host', None)
-        # pull out host from host name (comes between @ and #)
-        found = re.search('@(.+?)#', host_name)
-        if found:
-            host = found.group(1)
-        else:
-            return None
-        endpt = self.keystone_api.get_ssmc_endpoint_for_host(host)
-
-        if self.barbican_api == None:
-            self.barbican_api = barbican.BarbicanAPI()
-            self.barbican_api.do_setup(None)
-            # barbican_api.client_login()
-        uname, pwd = self.barbican_api.get_credentials(self.keystone_api.get_session_key(),
-                                                  host)
-
-        if endpt:
-            # attempt to use previous token for the SSMC endpoint, if it exists
-            global ssmc_tokens
-            ssmc_token = None
-            # pull ip out of SSMC endpoint
-            parsed = urlparse(endpt)
-            ssmc_ip = parsed.hostname
-            if ssmc_ip in ssmc_tokens:
-                ssmc_token = ssmc_tokens[ssmc_ip]
-
-            self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
-            self.ssmc_api.do_setup(None)
-            # this call is the bottle neck. Note that SSMC must attempt to
-            # login to each of the arrays it manages. And if one of those is
-            # down, the timeouts makes this call even longer to complete
-            self.ssmc_api.client_login()
-
-            if self.ssmc_api.get_session_key():
-                self.ssmc_api.get_volume_info(volume.id)
-                ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
-                return endpt
-            else:
-                raise ValueError("Unable to login to SSMC")
-        else:
-            raise ValueError("SSMC Endpoint does not exist for this backend host")
-
-        return None
-
-    def logout_SSMC_session(self, endpt):
-        # logout of session
-        self.ssmc_api.client_logout()
-
-        global ssmc_tokens
-        ssmc_token = None
-        # pull ip out of SSMC endpoint
-        parsed = urlparse(endpt)
-        ssmc_ip = parsed.hostname
-        if ssmc_ip in ssmc_tokens:
-            # remove reference to this token, so we start fresh next time
-            del ssmc_tokens[ssmc_ip]
-
