@@ -16,18 +16,9 @@
 """
 """
 
-import ast
-import base64
-import json
-import math
-import pprint
-import re
 import uuid
 
 from django.conf import settings
-
-from oslo.utils import importutils
-import six
 
 from keystoneClient import client
 
