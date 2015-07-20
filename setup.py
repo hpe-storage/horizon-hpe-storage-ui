@@ -35,7 +35,6 @@ setuptools.setup(
                      'page in HP 3PAR SSMC',
     url='https://github.com/hp-storage/horizon-ssmc-link',
     download_url='https://github.com/hp-storage/horizon-ssmc-link/tarball/0.0.1',
-    license='MIT',
     author='HP Storage Cloud Team',
     author_email='richard.hagarty@hp.com',
     install_requires=[],
