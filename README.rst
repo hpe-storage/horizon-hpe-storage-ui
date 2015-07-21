@@ -47,8 +47,9 @@ shell to create a Horizon to SSMC config file::
     UPDATE_HORIZON_CONFIG = {
         'customization_module': 'horizon_ssmc_link.overrides',
     }
+    
     EOF
-    cd ../../..  
+    cd ../../..
 
 
 Starting the app
