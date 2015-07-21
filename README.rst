@@ -26,11 +26,6 @@ The OpenStack Barbican service is required for this plug-in.
 Installation instructions
 -------------------------
 
-Begin by cloning the horizon-ssmc-link repository to your OpenStack root directory::
-
-    git clone https://github.com/openstack/horizon
-    git clone https://github.com/hp-storage/horizon-ssmc-link.git
-
 Create a virtual environment and install Horizon dependencies::
 
     cd horizon
@@ -51,11 +46,23 @@ editor. You will want to customize several settings:
 
 Install horizon-ssmc-link with all dependencies in your virtual environment::
 
-    tools/with_venv.sh pip install -e ../horizon-ssmc-link/
+    tools/with_venv.sh pip install -i https://testpypi.python.org/pypi horizon_ssmc_link
 
-To enable it in Horizon::
+To enable it in Horizon, 'cd' to your horizon directory, and then copy and paste the
+following commands into your shell to create a horizon to SSMC config file::
 
-    cp ../horizon-ssmc-link/horizon-ssmc-link/enabled/_110_ssmc_link_*.py openstack_dashboard/local/enabled
+    cd openstack_dashboard/local/enabled
+    cat <<EOF > _150_ssmc_link.py
+    PANEL_DASHBOARD = 'admin'
+    PANEL_GROUP = 'admin'
+    PANEL = 'ssmc_link'
+    ADD_PANEL = 'horizon_ssmc_link.storage_panel.panel.SSMCLink'
+    ADD_INSTALLED_APPS = ['horizon_ssmc_link.storage_panel']
+    UPDATE_HORIZON_CONFIG = {
+        'customization_module': 'horizon_ssmc_link.overrides',
+    }
+    EOF
+
 
 Starting the app
 ----------------
