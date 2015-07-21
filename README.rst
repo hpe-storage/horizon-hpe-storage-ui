@@ -21,7 +21,7 @@ Requirements
 ------------
 
 The OpenStack Barbican service is required for this plug-in.
-(see <https://wiki.openstack.org/wiki/Barbican>)
+(see https://wiki.openstack.org/wiki/Barbican)
 
 
 Installation instructions
