@@ -26,30 +26,15 @@ The OpenStack Barbican service is required for this plug-in.
 Installation instructions
 -------------------------
 
-Create a virtual environment and install Horizon dependencies::
+This installation assumes that you already have Horizon installed and correctly configured.
+
+Install horizon-ssmc-link with all dependencies in your Horizon virtual environment::
 
     cd horizon
-    python tools/install_venv.py
-
-Set up your ``local_settings.py`` file::
-
-    cp openstack_dashboard/local/local_settings.py.example openstack_dashboard/local/local_settings.py
-
-Open up the copied ``local_settings.py`` file in your preferred text
-editor. You will want to customize several settings:
-
--  ``OPENSTACK_HOST`` should be configured with the hostname of your
-   OpenStack server. Verify that the ``OPENSTACK_KEYSTONE_URL`` and
-   ``OPENSTACK_KEYSTONE_DEFAULT_ROLE`` settings are correct for your
-   environment. (They should be correct unless you modified your
-   OpenStack server to change them.)
-
-Install horizon-ssmc-link with all dependencies in your virtual environment::
-
     tools/with_venv.sh pip install -i https://testpypi.python.org/pypi horizon_ssmc_link
 
-To enable it in Horizon, from your Horizon directory, copy and paste the
-following commands into your shell to create a horizon to SSMC config file::
+To enable the plug-in in Horizon, copy and paste the following commands into your
+shell to create a Horizon to SSMC config file::
 
     cd openstack_dashboard/local/enabled
     cat <<EOF > _150_ssmc_link.py
@@ -74,3 +59,8 @@ If everything has gone according to plan, you should be able to run::
 
 and have the application start on port 8080. The horizon dashboard will
 be located at http://localhost:8080/
+
+If the plug-in was successfully loaded, after logging into Horizon as an "Admin"
+user, you should see a new "HP Storage" panel listed at the bottom of the "Admin"
+section.
+
