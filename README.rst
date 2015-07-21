@@ -21,6 +21,7 @@ Requirements
 ------------
 
 The OpenStack Barbican service is required for this plug-in.
+(see <https://wiki.openstack.org/wiki/Barbican>)
 
 
 Installation instructions
@@ -47,7 +48,7 @@ shell to create a Horizon to SSMC config file::
         'customization_module': 'horizon_ssmc_link.overrides',
     }
     EOF
-    cd ../../..
+    cd ../../..  
 
 
 Starting the app
