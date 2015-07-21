@@ -64,6 +64,7 @@ following commands into your shell to create a horizon to SSMC config file::
     EOF
     cd ../../..
 
+
 Starting the app
 ----------------
 
