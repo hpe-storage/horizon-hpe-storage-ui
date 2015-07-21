@@ -48,7 +48,7 @@ Install horizon-ssmc-link with all dependencies in your virtual environment::
 
     tools/with_venv.sh pip install -i https://testpypi.python.org/pypi horizon_ssmc_link
 
-To enable it in Horizon, 'cd' to your horizon directory, and then copy and paste the
+To enable it in Horizon, from your Horizon directory, copy and paste the
 following commands into your shell to create a horizon to SSMC config file::
 
     cd openstack_dashboard/local/enabled
@@ -62,7 +62,7 @@ following commands into your shell to create a horizon to SSMC config file::
         'customization_module': 'horizon_ssmc_link.overrides',
     }
     EOF
-
+    cd ../../..
 
 Starting the app
 ----------------
