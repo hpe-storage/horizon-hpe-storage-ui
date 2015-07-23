@@ -10,6 +10,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -21,8 +22,6 @@ from openstack_dashboard.api import cinder
 
 # from openstack_dashboard.api import cinder
 from horizon_ssmc_link.storage_panel import forms as deeplink_forms
-
-# from deep_link_ui import forms as xxx
 
 from horizon import tabs
 from openstack_dashboard.dashboards.admin.defaults import tabs as project_tabs
@@ -39,7 +38,6 @@ import horizon_ssmc_link.api.hp_ssmc_api as hpssmc
 import horizon_ssmc_link.api.keystone_api as keystone
 import horizon_ssmc_link.api.barbican_api as barbican
 
-from horizon_ssmc_link.storage_panel import tables as project_tables
 from horizon_ssmc_link.storage_panel import tabs as project_tabs
 
 import logging
@@ -56,13 +54,13 @@ class IndexView(tabs.TabbedTableView):
 class CreateEndpointView(forms.ModalFormView):
     form_class = deeplink_forms.CreateEndpoint
 
-    modal_header = _("Create Endpoint")
+    modal_header = _("Create Link")
     modal_id = "create_endpoint_modal"
     template_name = 'create_endpoint.html'
-    submit_label = _("Create Endpoint")
+    submit_label = _("Create Link")
     submit_url = reverse_lazy("horizon:admin:ssmc_link:create_endpoint")
     success_url = 'horizon:admin:ssmc_link:index'
-    page_title = _("Create an Endpoint")
+    page_title = _("Create SSMC Link")
 
     def get_success_url(self):
         return reverse(self.success_url)
@@ -70,13 +68,13 @@ class CreateEndpointView(forms.ModalFormView):
 
 class EditEndpointView(forms.ModalFormView):
     form_class = deeplink_forms.EditEndpoint
-    modal_header = _("Edit Endpoint")
+    modal_header = _("Edit Link")
     modal_id = "edit_endpoint_modal"
     template_name = 'edit_endpoint.html'
-    submit_label = _("Edit Endpoint")
+    submit_label = _("Edit Link")
     submit_url = "horizon:admin:ssmc_link:edit_endpoint"
     success_url = 'horizon:admin:ssmc_link:index'
-    page_title = _("Edit an Endpoint")
+    page_title = _("Edit SSMC Link")
 
     def get_context_data(self, **kwargs):
         context = super(EditEndpointView, self).get_context_data(**kwargs)
@@ -103,9 +101,19 @@ class EditEndpointView(forms.ModalFormView):
         return {'service_id': service_id}
 
 
-ssmc_tokens = {}     # keep tokens for performance
-
 class BaseLinkView(forms.ModalFormView):
+    form_class = deeplink_forms.LinkToSSMC
+    modal_header = _("Link to SSMC")
+    modal_id = "link_to_SSMC_modal"
+    template_name = 'link_and_launch.html'
+    submit_label = _("Link")
+    success_url = 'horizon:admin:volumes:volumes_tab'
+    page_title = _("Linking to SSMC...")
+    host = None
+    keystone_api = None
+    barbican_api = None
+    ssmc_api = None
+
     def get_3par_vol_name(self, id):
         uuid_str = id.replace("-", "")
         vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
@@ -129,27 +137,21 @@ class BaseLinkView(forms.ModalFormView):
         # pull out host from host name (comes between @ and #)
         found = re.search('@(.+?)#', host_name)
         if found:
-            host = found.group(1)
+            self.host = found.group(1)
         else:
             return None
-        endpt = self.keystone_api.get_ssmc_endpoint_for_host(host)
+        endpt = self.keystone_api.get_ssmc_endpoint_for_host(self.host)
 
         if self.barbican_api == None:
             self.barbican_api = barbican.BarbicanAPI()
             self.barbican_api.do_setup(None)
             # barbican_api.client_login()
         uname, pwd = self.barbican_api.get_credentials(self.keystone_api.get_session_key(),
-                                                  host)
+                                                  self.host)
 
         if endpt:
             # attempt to use previous token for the SSMC endpoint, if it exists
-            global ssmc_tokens
-            ssmc_token = None
-            # pull ip out of SSMC endpoint
-            parsed = urlparse(endpt)
-            ssmc_ip = parsed.hostname
-            if ssmc_ip in ssmc_tokens:
-                ssmc_token = ssmc_tokens[ssmc_ip]
+            ssmc_token = cache.get('ssmc-link-' + self.host)
 
             self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
             self.ssmc_api.do_setup(None)
@@ -160,41 +162,24 @@ class BaseLinkView(forms.ModalFormView):
 
             if self.ssmc_api.get_session_key():
                 self.ssmc_api.get_volume_info(volume.id)
-                ssmc_tokens[ssmc_ip] = self.ssmc_api.get_session_key()
+                cache.set('ssmc-link-' + self.host, self.ssmc_api.get_session_key())
                 return endpt
             else:
+                cache.delete('ssmc-link-' + self.host)
                 raise ValueError("Unable to login to SSMC")
         else:
             raise ValueError("SSMC Endpoint does not exist for this backend host")
 
         return None
 
-    def logout_SSMC_session(self, endpt):
+    def logout_SSMC_session(self):
         # logout of session
         self.ssmc_api.client_logout()
-
-        global ssmc_tokens
-        ssmc_token = None
-        # pull ip out of SSMC endpoint
-        parsed = urlparse(endpt)
-        ssmc_ip = parsed.hostname
-        if ssmc_ip in ssmc_tokens:
-            # remove reference to this token, so we start fresh next time
-            del ssmc_tokens[ssmc_ip]
+        cache.delete('ssmc-link-' + self.host)
 
 
 class LinkVolumeView(BaseLinkView):
-    form_class = deeplink_forms.LinkToSSMC
-    modal_header = _("Link to SSMC")
-    modal_id = "link_to_SSMC_modal"
-    template_name = 'link_and_launch.html'
-    submit_label = _("Link")
     submit_url = 'horizon:admin:ssmc_link:link_to_volume'
-    success_url = 'horizon:admin:volumes:volumes_tab'
-    page_title = _("Linking to SSMC...")
-    keystone_api = None
-    barbican_api = None
-    ssmc_api = None
 
     def get_context_data(self, **kwargs):
         context = super(LinkVolumeView, self).get_context_data(**kwargs)
@@ -232,7 +217,7 @@ class LinkVolumeView(BaseLinkView):
                         ref.path + '?sessionToken=' + self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time
-                # self.logout_SSMC_session(endpoint)
+                # self.logout_SSMC_session()
                 LOG.info(("SSMC URL = %s") % url)
                 return volume, url
 
@@ -254,17 +239,7 @@ class LinkVolumeView(BaseLinkView):
 
 
 class LinkVolumeCPGView(BaseLinkView):
-    form_class = deeplink_forms.LinkToSSMC
-    modal_header = _("Link to SSMC")
-    modal_id = "link_to_SSMC_modal"
-    template_name = 'link_and_launch.html'
-    submit_label = _("Link")
     submit_url = 'horizon:admin:ssmc_link:link_to_cpg'
-    success_url = 'horizon:admin:volumes:volumes_tab'
-    page_title = _("Linking to SSMC...")
-    keystone_api = None
-    barbican_api = None
-    ssmc_api = None
 
     def get_context_data(self, **kwargs):
         context = super(LinkVolumeCPGView, self).get_context_data(**kwargs)
@@ -298,7 +273,7 @@ class LinkVolumeCPGView(BaseLinkView):
                         '?sessionToken=' + self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time
-                # self.logout_SSMC_session(endpoint)
+                # self.logout_SSMC_session()
                 LOG.info(("SSMC URL = %s") % url)
                 return volume, url
 
@@ -320,17 +295,7 @@ class LinkVolumeCPGView(BaseLinkView):
 
 
 class LinkVolumeDomainView(BaseLinkView):
-    form_class = deeplink_forms.LinkToSSMC
-    modal_header = _("Link to SSMC")
-    modal_id = "link_to_SSMC_modal"
-    template_name = 'link_and_launch.html'
-    submit_label = _("Link")
     submit_url = 'horizon:admin:ssmc_link:link_to_domain'
-    success_url = 'horizon:admin:volumes:volumes_tab'
-    page_title = _("Linking to SSMC...")
-    keystone_api = None
-    barbican_api = None
-    ssmc_api = None
 
     def get_context_data(self, **kwargs):
         context = super(LinkVolumeDomainView, self).get_context_data(**kwargs)
@@ -364,7 +329,7 @@ class LinkVolumeDomainView(BaseLinkView):
                         '?sessionToken=' + self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time
-                # self.logout_SSMC_session(endpoint)
+                # self.logout_SSMC_session()
                 LOG.info(("SSMC URL = %s") % url)
                 return volume, url
 

@@ -10,10 +10,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from django.core.exceptions import ValidationError  # noqa
-from django.core.urlresolvers import reverse
-from django.template import defaultfilters as filters
-from django.utils.http import urlencode
+from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
@@ -33,7 +30,7 @@ import horizon_ssmc_link.api.barbican_api as barbican
 
 class CreateEndpointAction(tables.LinkAction):
     name = "create_endpoint"
-    verbose_name = _("Create Endpoint")
+    verbose_name = _("Create Link")
     url = "horizon:admin:ssmc_link:create_endpoint"
     classes = ("ajax-modal",)
     icon = "plus"
@@ -42,7 +39,7 @@ class CreateEndpointAction(tables.LinkAction):
 
 class EditEndpointAction(tables.LinkAction):
     name = "edit_endpoint"
-    verbose_name = _("Edit Endpoint")
+    verbose_name = _("Edit Link")
     url = "horizon:admin:ssmc_link:edit_endpoint"
     classes = ("ajax-modal",)
     icon = "pencil"
@@ -56,16 +53,16 @@ class DeleteEndpointAction(tables.DeleteAction):
     @staticmethod
     def action_present(count):
         return ungettext_lazy(
-            u"Delete Endpoint",
-            u"Delete Endpoints",
+            u"Delete Link",
+            u"Delete Links",
             count
         )
 
     @staticmethod
     def action_past(count):
         return ungettext_lazy(
-            u"Deleted Endpoint",
-            u"Deleted Endpoints",
+            u"Deleted Link",
+            u"Deleted Links",
             count
         )
 
@@ -85,11 +82,13 @@ class DeleteEndpointAction(tables.DeleteAction):
         # now delete service and endpoint
         keystone_api.delete_ssmc_endpoint(service_id)
 
+        # cached SSMC token is no longer valid
+        cache.delete('ssmc-link-' + host)
 
 class EndpointsTable(tables.DataTable):
-    cinder_backend = tables.Column('backend', verbose_name=_('Backend'),
+    cinder_backend = tables.Column('backend', verbose_name=_('Cinder Backend'),
                          form_field=forms.CharField(max_length=64))
-    ssmc_endpoint = tables.Column('endpoint', verbose_name=_('SSMC Endpoint'),
+    ssmc_endpoint = tables.Column('endpoint', verbose_name=_('SSMC Instance'),
                          form_field=forms.CharField(max_length=64))
     access = tables.Column('username', verbose_name=_('SSMC Login'),
                          form_field=forms.CharField(max_length=64))

@@ -17,6 +17,7 @@
 #    under the License.
 
 from django.core.urlresolvers import reverse
+from django.core.cache import cache
 from django.forms import ValidationError  # noqa
 from django.utils.translation import ugettext_lazy as _
 
@@ -42,9 +43,9 @@ import horizon_ssmc_link.api.cinder_api as cinder
 
 class CreateEndpoint(forms.SelfHandlingForm):
     backend = forms.ChoiceField(label=_("Available Cinder Backends"))
-    endpoint_ip = forms.IPField(label=_("SSMC Endpoint IP Address"))
+    endpoint_ip = forms.IPField(label=_("SSMC Instance Address"))
     endpoint_port = forms.IntegerField(
-        label=_("SSMC Endpoint Port"),
+        label=_("SSMC Instance Port"),
         help_text=_("Enter an integer value between 1 and 65535."),
         validators=[validators.validate_port_range])
     uname = forms.CharField(max_length=255,
@@ -115,8 +116,8 @@ class CreateEndpoint(forms.SelfHandlingForm):
                                          data['uname'],
                                          data['pwd'])
 
-            messages.success(request, _('Successfully created endpoint '
-                                        'for backend: %s') % data['backend'])
+            messages.success(request, _('Successfully created SSMC Link '
+                                        'for Cinder backend: %s') % data['backend'])
             return True
         except Exception as ex:
             redirect = reverse("horizon:admin:volumes:index")
@@ -130,9 +131,9 @@ class EditEndpoint(forms.SelfHandlingForm):
                               required=False,
                               widget=forms.TextInput(
                                   attrs={'readonly': 'readonly'}))
-    endpoint_ip = forms.IPField(label=_("SSMC Endpoint IP Address"))
+    endpoint_ip = forms.IPField(label=_("SSMC Instance Address"))
     endpoint_port = forms.IntegerField(
-        label=_("SSMC Endpoint Port"),
+        label=_("SSMC Instance Port"),
         help_text=_("Enter an integer value between 1 and 65535."),
         validators=[validators.validate_port_range])
     uname = forms.CharField(max_length=255,
@@ -231,6 +232,8 @@ class EditEndpoint(forms.SelfHandlingForm):
             new_pwd = data['pwd']
             host = data['backend']
             if new_uname != uname_field.initial:
+                # cached SSMC token is no longer valid
+                cache.delete('ssmc-link-' + host)
                 barbican_api = barbican.BarbicanAPI()
                 barbican_api.do_setup(None)
                 barbican_api.update_user_name(keystone_api.get_session_key(),
@@ -238,14 +241,16 @@ class EditEndpoint(forms.SelfHandlingForm):
                                               new_uname)
 
             if new_pwd != pwd_field.initial:
+                # cached SSMC token is no longer valid
+                cache.delete('ssmc-link-' + host)
                 barbican_api = barbican.BarbicanAPI()
                 barbican_api.do_setup(None)
                 barbican_api.update_password(keystone_api.get_session_key(),
                                               host,
                                               new_pwd)
 
-            messages.success(request, _('Successfully update endpoint '
-                                        'for backend: %s') % data['backend'])
+            messages.success(request, _('Successfully update SSMC Link '
+                                        'for Cinder backend: %s') % data['backend'])
             return True
         except Exception:
             redirect = reverse("horizon:admin:volumes:index")

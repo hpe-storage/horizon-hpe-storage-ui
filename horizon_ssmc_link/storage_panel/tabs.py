@@ -26,7 +26,7 @@ import horizon_ssmc_link.api.barbican_api as barbican
 
 class EndpointsTab(tabs.TableTab):
     table_classes = (tables.EndpointsTable,)
-    name = _("Backend SSMC Endpoints")
+    name = _("SSMC Links")
     slug = "endpoints_tab"
     template_name = "horizon/common/_detail_table.html"
 
