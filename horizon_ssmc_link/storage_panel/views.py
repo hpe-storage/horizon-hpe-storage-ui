@@ -40,6 +40,8 @@ import horizon_ssmc_link.api.barbican_api as barbican
 
 from horizon_ssmc_link.storage_panel import tabs as project_tabs
 
+from keystoneclient.v2_0 import client as keystone_client
+
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -130,8 +132,7 @@ class BaseLinkView(forms.ModalFormView):
         if self.keystone_api == None:
             LOG.info(("!!!!!!!!!! GET KEYSTONE TOKEN FOR VOL = %s") % volume.name)
             self.keystone_api = keystone.KeystoneAPI()
-            self.keystone_api.do_setup(None)
-            self.keystone_api.client_login()
+            self.keystone_api.do_setup(self.request)
 
         host_name = getattr(volume, 'os-vol-host-attr:host', None)
         # pull out host from host name (comes between @ and #)

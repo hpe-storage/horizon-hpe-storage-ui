@@ -54,6 +54,9 @@ class KeystoneClient(object):
         self.http = http.HTTPJSONRESTClient(self.api_url)
         api_version = None
 
+    def initClient(self, token, tenant_id):
+        self.http.initClient(token, tenant_id)
+
     def debug_rest(self, flag):
         """This is useful for debugging requests to 3PAR.
 
@@ -63,29 +66,6 @@ class KeystoneClient(object):
         """
         self.http.set_debug_flag(flag)
 
-
-    def login(self, username, password, optional=None):
-        """This authenticates against the 3PAR wsapi server and creates a
-           session.
-
-        :param username: The username
-        :type username: str
-        :param password: The Password
-        :type password: str
-
-        :returns: None
-
-        """
-        self.http.authenticateKeystone(username, password, optional)
-
-    def logout(self):
-        """This destroys the session and logs out from the 3PAR server.
-           The SSH connection to the 3PAR server is also closed.
-
-        :returns: None
-
-        """
-        self.http.unauthenticateKeystone()
 
     def getSessionKey(self):
         return self.http.getSessionKey()

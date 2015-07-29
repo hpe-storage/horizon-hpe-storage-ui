@@ -46,51 +46,31 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
     """
 
-    def authenticateKeystone(self, user, password, optional=None):
-        """
-        This tries to create an authenticated session with the 3PAR server
-
-        :param user: The username
-        :type user: str
-        :param password: Password
-        :type password: str
-
-        """
-        # this prevens re-auth attempt if auth fails
-        self.auth_try = 1
+    def initClient(self, token, tenant_id):
+        # use the unscoped token from the Horizon session to get a
+        # real admin token that we can use to access Keystone and Barbican
         self.session_key = None
-
-        info = {'auth':
-                     {'tenantName': 'admin',
-                      'passwordCredentials':
-                           {'username': user,
-                            'password': password
-                           }
-                     }
-               }
-
-        self._auth_optional = None
-
-        if optional:
-            self._auth_optional = optional
-            info.update(optional)
-
-        resp, body = self.post('/v2.0/tokens', body=info)
-        if body and 'access' in body:
-            access = body['access']
-            if access and 'token' in access:
-                token = access['token']
-                if token and 'id' in token:
-                    self.session_key = token['id']
-                if token and 'tenant' in token:
-                    tenant = token['tenant']
-                    if tenant and 'id' in tenant:
-                        self.tenant_id = tenant['id']
-
-
         self.auth_try = 0
-        self.user = user
-        self.password = password
+        try:
+            info = {
+                'auth': {
+                    'tenantId': tenant_id,
+                    'token': {
+                        'id': token
+                    }
+                }
+            }
+
+            resp, body = self.post('/v2.0/tokens', body=info)
+            if body and 'access' in body:
+                access = body['access']
+                if 'token' in access:
+                    newToken = access['token']
+                    self.session_key = newToken['id']
+                    self.tenant_id = tenant_id
+        except Exception as ex:
+            exceptions.handle(self.request,
+                              ('Unable to get Keystone token.'))
 
     def getSessionKey(self):
         return self.session_key
@@ -185,6 +165,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
     def getSSMCEndpoints(self):
         endpoints = []
         # get all 3par-link services
+        self.auth_try = 1
         header = {'X-Auth-Token': self.getSessionKey()}
         try:
             resp, body = self.get('/v3/services?type=3par-link', headers=header)
@@ -268,16 +249,3 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         except Exception as ex:
             exceptions.handle(self.request,
                               ('Unable to delete SSMC Endpoint.'))
-
-    def _reauth(self):
-        self.authenticateKeystone(self.user, self.password, self._auth_optional)
-
-    def unauthenticateKeystone(self):
-        """
-        This clears the authenticated session with the 3PAR server.
-
-        """
-        # delete the session on the 3Par
-        # TODO How to Delete Keystone Session Key????
-        #self.delete('/foundation/REST/sessionservice/sessions/%s' % self.session_key)
-        #self.session_key = None

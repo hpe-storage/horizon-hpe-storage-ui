@@ -64,8 +64,7 @@ class CreateEndpoint(forms.SelfHandlingForm):
 
         # get list of backend names from cinder
         keystone_api = keystone.KeystoneAPI()
-        keystone_api.do_setup(None)
-        keystone_api.client_login()
+        keystone_api.do_setup(self.request)
         endpoints = keystone_api.get_ssmc_endpoints()
 
         cinder_api = cinder.CinderAPI()
@@ -101,8 +100,7 @@ class CreateEndpoint(forms.SelfHandlingForm):
         try:
             # create new keypoint service and endpoint
             keystone_api = keystone.KeystoneAPI()
-            keystone_api.do_setup(None)
-            keystone_api.client_login()
+            keystone_api.do_setup(self.request)
             backend_name = 'ssmc-' + data['backend']
             port = str(data['endpoint_port'])
             endpoint = 'https://' + data['endpoint_ip'] + ':' + port + '/'
@@ -159,8 +157,7 @@ class EditEndpoint(forms.SelfHandlingForm):
         pwd_field = self.fields['pwd']
 
         keystone_api = keystone.KeystoneAPI()
-        keystone_api.do_setup(None)
-        keystone_api.client_login()
+        keystone_api.do_setup(self.request)
 
         # initialize endpoint fields
         endpoint, name = keystone_api.get_ssmc_endpoint_for_service_id(service_id)
@@ -213,8 +210,7 @@ class EditEndpoint(forms.SelfHandlingForm):
             pwd_field = self.fields['pwd']
 
             keystone_api = keystone.KeystoneAPI()
-            keystone_api.do_setup(None)
-            keystone_api.client_login()
+            keystone_api.do_setup(self.request)
             backend_name = 'ssmc-' + data['backend']
 
             # only update endpoint if url or port has changed

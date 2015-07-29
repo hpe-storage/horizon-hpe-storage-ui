@@ -35,8 +35,7 @@ class EndpointsTab(tabs.TableTab):
 
         try:
             keystone_api = keystone.KeystoneAPI()
-            keystone_api.do_setup(None)
-            keystone_api.client_login()
+            keystone_api.do_setup(self.request)
             endpoints = keystone_api.get_ssmc_endpoints()
 
             # for each endpoint, get credentials

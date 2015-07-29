@@ -33,42 +33,25 @@ class KeystoneAPI(object):
         self.client = None
         self.uuid = uuid.uuid4()
         self.keystone_api_url = 'http://' + openstack_host + ':5000'
-        self.keystone_username = 'admin'
-        self.keystone_passwd = 'hpinvent'
         self.debug = True
         self.launch_page = self.keystone_api_url + '/#/launch-page/'
         self.showUrl = '/virtual-volumes/show/overview/r'
 
-    def _create_client(self):
-        cl = client.KeystoneClient(self.keystone_api_url)
-        return cl
-
-    def client_login(self):
+    def do_setup(self, request):
+        token = request.session['unscoped_token']
+        tenant_id = request.session._session['token'].project['id']
         try:
-            LOG.debug("Connecting to KEYSTONE")
-            self.client.login(self.keystone_username,
-                              self.keystone_passwd)
-        except Exception:
-            LOG.error("Can't LOG IN")
-
-
-    def client_logout(self):
-        LOG.info(("Disconnect from Keystone REST %s") % self.uuid)
-        self.client.logout()
-        LOG.info(("logout Done %s") % self.uuid)
-
-    def do_setup(self, context):
-        try:
-            self.client = self._create_client()
+            self.client = client.KeystoneClient(self.keystone_api_url)
+            self.client.initClient(token, tenant_id)
         except Exception as ex:
             return
         if self.debug:
             self.client.debug_rest(True)
 
-    def get_session_token(self):
-        LOG.debug("Requesting Token from Keystone")
-        return self.client.getSessionKeystoneToken(self.keystone_username,
-                                                   self.keystone_passwd)
+    # def get_session_token(self):
+    #     LOG.debug("Requesting Token from Keystone")
+    #     return self.client.getSessionKeystoneToken(self.keystone_username,
+    #                                                self.keystone_passwd)
 
     def get_session_key(self):
         return self.client.getSessionKey()

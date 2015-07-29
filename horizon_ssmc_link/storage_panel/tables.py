@@ -68,8 +68,7 @@ class DeleteEndpointAction(tables.DeleteAction):
 
     def delete(self, request, service_id):
         keystone_api = keystone.KeystoneAPI()
-        keystone_api.do_setup(None)
-        keystone_api.client_login()
+        keystone_api.do_setup(request)
         host = keystone_api.get_ssmc_service_name(service_id)
         backend = host[5:]    # remove 'ssmc-' prefix
 
