@@ -102,37 +102,30 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         self.auth_try = 1
         info = {'Authorization': self.session_key}
         nn = "'%s'" % name
-        count = 0
-        import time
-        while count == 0:
-            resp, body = self.get('/provisioning/REST/volumeviewservice/volumes?query=name+eq+' + nn, headers=info)
-            # resp, body = self.get("/provisioning/REST/volumeviewservice/volumes?query=name")
-            if body and 'count' in body:
-                LOG.error("Volume has no ref yet... delay for 5 secs\n")
-                count = body['count']
-                if count == 0:
-                    time.sleep(5)
-
-        if count > 0:
-            if 'members' in body:
-                members = body['members']
-                member = members[0]
-                if member:
-                    if 'links' in member:
-                        # store off link to this volume
-                        links = member['links']
-                        self_link = links[0]
-                        if self_link and 'href' in self_link:
-                            self.href = self_link['href']
-                    if 'systemWWN' in member:
-                        # store off link to array WWN for this volume
-                        self.systemWWN = member['systemWWN']
-                    if 'userCpgUid' in member:
-                        # store off link to CPG for this volume
-                        self.cpg = member['userCpgUid']
-                    if 'domainUID' in member:
-                        # store off link to Domain for this volume
-                        self.domain = member['domainUID']
+        resp, body = self.get('/provisioning/REST/volumeviewservice/volumes?query=name+eq+' + nn, headers=info)
+        # resp, body = self.get("/provisioning/REST/volumeviewservice/volumes?query=name")
+        if body and 'count' in body:
+            count = body['count']
+            if count > 0:
+                if 'members' in body:
+                    members = body['members']
+                    member = members[0]
+                    if member:
+                        if 'links' in member:
+                            # store off link to this volume
+                            links = member['links']
+                            self_link = links[0]
+                            if self_link and 'href' in self_link:
+                                self.href = self_link['href']
+                        if 'systemWWN' in member:
+                            # store off link to array WWN for this volume
+                            self.systemWWN = member['systemWWN']
+                        if 'userCpgUid' in member:
+                            # store off link to CPG for this volume
+                            self.cpg = member['userCpgUid']
+                        if 'domainUID' in member:
+                            # store off link to Domain for this volume
+                            self.domain = member['domainUID']
 
 
     # NOT NEEDED???
