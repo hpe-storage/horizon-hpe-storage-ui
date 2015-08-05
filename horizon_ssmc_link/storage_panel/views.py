@@ -1,14 +1,16 @@
-# Licensed under the Apache License, Version 2.0 (the "License"); you may
-# not use this file except in compliance with the License. You may obtain
-# a copy of the License at
+# (c) Copyright [2015] Hewlett-Packard Development Company, L.P.
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations
-# under the License.
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
 
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
@@ -20,7 +22,6 @@ from horizon import forms
 from horizon.utils import memoized
 from openstack_dashboard.api import cinder
 
-# from openstack_dashboard.api import cinder
 from horizon_ssmc_link.storage_panel import forms as deeplink_forms
 
 from horizon import tabs
@@ -130,7 +131,7 @@ class BaseLinkView(forms.ModalFormView):
 
     def get_SSMC_endpoint(self, volume):
         if self.keystone_api == None:
-            LOG.info(("!!!!!!!!!! GET KEYSTONE TOKEN FOR VOL = %s") % volume.name)
+            LOG.info(("deep link - get keystone token for vol = %s") % volume.name)
             self.keystone_api = keystone.KeystoneAPI()
             self.keystone_api.do_setup(self.request)
 
@@ -199,12 +200,12 @@ class LinkVolumeView(BaseLinkView):
             volume = cinder.volume_get(self.request, volume_id)
 
             volume_name = self.get_3par_vol_name(volume_id)
-            LOG.info(("!!!!!!!!!! GET ELEMENT MANAGER FOR VOLUME = %s") % volume_name)
+            LOG.info(("deep link - get keystone token for vol = %s") % volume_name)
             formatted_vol_name = format(volume_name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
-            LOG.info(("Session Token = %s") % self.ssmc_api.get_session_key())
+            LOG.info(("deep-link - Session Token = %s") % self.ssmc_api.get_session_key())
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
                 # url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
@@ -219,7 +220,7 @@ class LinkVolumeView(BaseLinkView):
 
                 # USE if we want user to log in every time
                 # self.logout_SSMC_session()
-                LOG.info(("SSMC URL = %s") % url)
+                LOG.info(("deep-link - SSMC URL = %s") % url)
                 return volume, url
 
         except ValueError as err:
@@ -259,12 +260,12 @@ class LinkVolumeCPGView(BaseLinkView):
             volume = cinder.volume_get(self.request, volume_id)
 
             volume_name = self.get_3par_vol_name(volume_id)
-            LOG.info(("!!!!!!!!!! GET ELEMENT MANAGER FOR VOLUME = %s") % volume_name)
+            LOG.info(("deep link - get keystone token for vol = %s") % volume_name)
             formatted_vol_name = format(volume_name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
-            LOG.info(("Session Token = %s") % self.ssmc_api.get_session_key())
+            LOG.info(("deep-link - Session Token = %s") % self.ssmc_api.get_session_key())
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
                 url = "0;url=" + endpoint + '#/cpgs/show/'\
@@ -275,7 +276,7 @@ class LinkVolumeCPGView(BaseLinkView):
 
                 # USE if we want user to log in every time
                 # self.logout_SSMC_session()
-                LOG.info(("SSMC URL = %s") % url)
+                LOG.info(("deep-link - SSMC URL = %s") % url)
                 return volume, url
 
         except ValueError as err:
@@ -315,12 +316,12 @@ class LinkVolumeDomainView(BaseLinkView):
             volume = cinder.volume_get(self.request, volume_id)
 
             volume_name = self.get_3par_vol_name(volume_id)
-            LOG.info(("!!!!!!!!!! GET ELEMENT MANAGER FOR VOLUME = %s") % volume_name)
+            LOG.info(("deep link - get keystone token for vol = %s") % volume_name)
             formatted_vol_name = format(volume_name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
-            LOG.info(("Session Token = %s") % self.ssmc_api.get_session_key())
+            LOG.info(("deep-link - Session Token = %s") % self.ssmc_api.get_session_key())
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
                 url = "0;url=" + endpoint + '#/domains/show/'\
@@ -331,7 +332,7 @@ class LinkVolumeDomainView(BaseLinkView):
 
                 # USE if we want user to log in every time
                 # self.logout_SSMC_session()
-                LOG.info(("SSMC URL = %s") % url)
+                LOG.info(("deep-link - SSMC URL = %s") % url)
                 return volume, url
 
         except ValueError as err:

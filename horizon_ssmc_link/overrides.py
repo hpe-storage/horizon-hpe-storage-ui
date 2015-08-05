@@ -1,6 +1,17 @@
+# (c) Copyright [2015] Hewlett-Packard Development Company, L.P.
 #
-# This is an example of how to contribute to an existing horizon page
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
 #
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
 from django.utils.translation import ugettext_lazy as _
 from horizon import tables
 from openstack_dashboard.dashboards.admin.volumes.volumes import tables \
@@ -15,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 class LaunchElementManagerVolume(tables.LinkAction):
-    LOG.info(("!!!!!!!!!! LAUNCH ELEMENT MANAGER VOLUME CALLED"))
+    LOG.info(("Deep Link - launch element manager volume"))
     name = "link_volume"
     verbose_name = _("View Volume in HP 3PAR SSMC")
     url = "horizon:admin:ssmc_link:link_to_volume"
@@ -31,7 +42,7 @@ class LaunchElementManagerVolume(tables.LinkAction):
 
 
 class LaunchElementManagerCPG(tables.LinkAction):
-    LOG.info(("!!!!!!!!!! LAUNCH ELEMENT MANAGER CPG CALLED"))
+    LOG.info(("Deep Link - launch element manager CPG"))
     name = "link_cpg"
     verbose_name = _("View Volume CPG in HP 3PAR SSMC")
     url = "horizon:admin:ssmc_link:link_to_cpg"
@@ -47,7 +58,7 @@ class LaunchElementManagerCPG(tables.LinkAction):
 
 
 class LaunchElementManagerDomain(tables.LinkAction):
-    LOG.info(("!!!!!!!!!! LAUNCH ELEMENT MANAGER DOMAIN CALLED"))
+    LOG.info(("Deep Link - launch element manager domain"))
     name = "link_domain"
     verbose_name = _("View Volume Domain in HP 3PAR SSMC")
     url = "horizon:admin:ssmc_link:link_to_domain"
