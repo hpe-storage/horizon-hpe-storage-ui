@@ -24,6 +24,19 @@ except ImportError:
     pass
 
 setuptools.setup(
+    name='horizon_ssmc_link',
+    packages=['horizon_ssmc_link'],
+    version='1.0.0',
+    description='Links Horizon volumes to HP 3PAR SSMC',
+    long_description='Allows OpenStack users to link from a volume '
+                     'displayed in Horizon to its corresponding detail '
+                     'page in HP 3PAR SSMC',
+    author='HP Storage Cloud Team',
+    author_email='richard.hagarty@hp.com',
+    url='https://github.com/hp-storage/horizon-ssmc-link',
+    download_url='https://github.com/hp-storage/horizon-ssmc-link/tarball/1.0.0',
+    keywords=['openstack', 'horizon', 'horizon-plug-in', 'ssmc'],
+    install_requires=[],
     setup_requires=['pbr'],
     pbr=True
 )
