@@ -33,7 +33,7 @@ Install horizon-ssmc-link with all dependencies in your Horizon virtual environm
 
     cd horizon
     python tools/install_venv.py
-    tools/with_venv.sh pip install -i https://testpypi.python.org/pypi horizon_ssmc_link
+    tools/with_venv.sh pip install horizon_ssmc_link
 
 To enable the plug-in in Horizon, copy and paste the following commands into your
 shell to create a Horizon to SSMC config file::
