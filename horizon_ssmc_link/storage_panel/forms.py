@@ -65,8 +65,9 @@ class CreateEndpoint(forms.SelfHandlingForm):
 
         cinder_api = cinder.CinderAPI()
         cinder_api.do_setup(None)
-        backends = cinder_api.get_pools(keystone_api.get_session_key(),
-                                        keystone_api.get_tenant_id())
+        backends = cinder_api.\
+            get_pools(keystone_api.get_session_key(),
+                      keystone_api.get_tenant_id())
         choices = []
         for backend in backends:
             # only show backends that haven't been assigned an endpoint

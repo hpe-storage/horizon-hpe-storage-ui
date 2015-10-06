@@ -1,13 +1,13 @@
-===============================
+=================
 horizon-ssmc-link
-===============================
+=================
 
 HP Storage Dashboard
 
 * Free software: Apache license
 
 Overview
----------
+--------
 
 This plug-in extends the OpenStack Horizon Dashboard.
 
@@ -27,16 +27,13 @@ The OpenStack Barbican service is required for this plug-in.
 Installation instructions
 -------------------------
 
-This installation assumes that you already have Horizon installed and correctly configured.
+This installation assumes that you already have Horizon installed and correctly configured::
 
-Install horizon-ssmc-link with all dependencies in your Horizon virtual environment::
+    pip install horizon-ssmc-link
 
-    cd horizon
-    python tools/install_venv.py
-    tools/with_venv.sh pip install horizon_ssmc_link
-
-To enable the plug-in in Horizon, copy and paste the following commands into your
-shell to create a Horizon to SSMC config file::
+To enable the plug-in in Horizon, create a config file named _150_ssmc_link.py in the Horizon
+direcory "openstack_dashboard/local/enabled". To do this, copy and paste the following commands
+into your shell::
 
     cd openstack_dashboard/local/enabled
     cat <<EOF > _150_ssmc_link.py
@@ -53,14 +50,20 @@ shell to create a Horizon to SSMC config file::
 Starting the app
 ----------------
 
-If everything has gone according to plan, you should be able to run::
+If everything has gone according to plan, you then need to restart apache::
 
-    ./run_tests.sh --runserver 0.0.0.0:8080
+    sudo service apache2 restart
 
-and have the application start on port 8080. The horizon dashboard will
-be located at http://localhost:8080/
 
-If the plug-in was successfully loaded, after logging into Horizon as an "Admin"
-user, you should see a new "HP Storage" panel listed at the bottom of the "Admin"
+After reloading the Horizon dashboard in your browser, log-in as an "Admin" user. If the plug-in
+was successfully loaded, you should see a new "HP Storage" panel listed at the bottom of the "Admin"
 section.
+
+Uninstalling the plug-in
+------------------------
+
+Uninstall the python package and remove the config files::
+
+    sudo pip uninstall horizon-ssmc-link
+    rm horizon/openstack_dashboard/local/enabled/_150_ssmc_link.*
 
