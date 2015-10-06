@@ -29,11 +29,12 @@ Installation instructions
 
 This installation assumes that you already have Horizon installed and correctly configured::
 
-    pip install horizon-ssmc-link
+    sudo pip install horizon-ssmc-link
 
-To enable the plug-in in Horizon, create a config file named _150_ssmc_link.py in the Horizon
-direcory "openstack_dashboard/local/enabled". To do this, copy and paste the following commands
-into your shell::
+To enable the plug-in in Horizon, create a config file named "_150_ssmc_link.py" and place it
+in the Horizon direcory "openstack_dashboard/local/enabled". This can be accomplished by
+performing the following steps: 1) "cd" to your local Horizon root direcory. 2) copy and paste
+the following commands into your shell::
 
     cd openstack_dashboard/local/enabled
     cat <<EOF > _150_ssmc_link.py
@@ -50,7 +51,7 @@ into your shell::
 Starting the app
 ----------------
 
-If everything has gone according to plan, you then need to restart apache::
+In order for Horizon to load in the plug-in, you need to restart apache::
 
     sudo service apache2 restart
 
