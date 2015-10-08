@@ -12,16 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from django.utils.translation import ugettext_lazy as _
+import pbr.version
 
-import horizon
-
-from openstack_dashboard.dashboards.admin import dashboard
-
-
-class SSMCLink(horizon.Panel):
-    name = _("HP Storage")
-    slug = "ssmc_link"
-    # permissions = ('openstack.services.deep_link',)
-
-# dashboard.Admin.register(SSMCLink)
+version_info = pbr.version.VersionInfo('horizon_ssmc_link')
