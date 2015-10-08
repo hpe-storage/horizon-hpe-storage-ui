@@ -4,7 +4,7 @@ APP_LINK_DIR=$(cd $(dirname $BASH_SOURCE)/.. && pwd)
 
 function install_horizon-ssmc-link {
     sudo pip install --upgrade ${APP_LINK_DIR}
-    cp -a ${APP_LINK_DIR}/horizon_ssmc_link/enabled/* ${DEST}/horizon/openstack_dsahboard/enabled/
+    cp -a ${APP_LINK_DIR}/horizon_ssmc_link/enabled/* ${DEST}/horizon/openstack_dashboard/local/enabled
     python ${DEST}/horizon/manage.py compress --force
 }
 
