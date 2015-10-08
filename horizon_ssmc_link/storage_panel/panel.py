@@ -24,4 +24,4 @@ class SSMCLink(horizon.Panel):
     slug = "ssmc_link"
     # permissions = ('openstack.services.deep_link',)
 
-# dashboard.Admin.register(SSMCLink)
+dashboard.Admin.register(SSMCLink)
