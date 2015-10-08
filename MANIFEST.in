@@ -4,3 +4,8 @@ exclude .gitignore
 exclude .gitreview
 
 global-exclude *.pyc
+
+include setup.py
+
+recursive-include horizon_ssmc_link/enabled *
+recursive-include horizon_ssmc_link/templates *
