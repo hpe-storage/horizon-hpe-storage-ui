@@ -1,0 +1,2 @@
+# settings file for horizon-ssmc-link plug-in
+enable_service horizon-ssmc-link
