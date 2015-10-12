@@ -47,7 +47,7 @@ With Horizon
     ./run_tests.sh -f
     cp ./openstack_dashboard/local/local_settings.py.example ./opentstack_dashboard/local/local_settings.py
     pushd ../horizon-ssmc-link
-    ../horizon/tools/with_venv.sh pip install --upgrage .
+    ../horizon/tools/with_venv.sh pip install --upgrade .
     cp -a horizon_ssmc_link/enabled/* ../horizon/openstack_dashboard/local/enabled
     popd
 
@@ -65,5 +65,5 @@ Uninstalling the plug-in
 Uninstall the python package and remove the config files::
 
     sudo pip uninstall horizon-ssmc-link
-    rm horizon/openstack_dashboard/local/enabled/_*_ssmc_link_admin_panel.*
+    rm horizon/openstack_dashboard/local/enabled/_999_ssmc_link_admin_panel.*
 
