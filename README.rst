@@ -65,5 +65,5 @@ Uninstalling the plug-in
 Uninstall the python package and remove the config files::
 
     sudo pip uninstall horizon-ssmc-link
-    rm horizon/openstack_dashboard/local/enabled/_150_ssmc_link.*
+    rm horizon/openstack_dashboard/local/enabled/_*_ssmc_link_admin_panel.*
 
