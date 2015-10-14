@@ -1,4 +1,4 @@
-# (c) Copyright [2015] Hewlett-Packard Development Company, L.P.
+# (c) Copyright [2015] Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -115,9 +115,9 @@ class CreateEndpoint(forms.SelfHandlingForm):
                                         'for Cinder backend: %s') % data['backend'])
             return True
         except Exception as ex:
-            redirect = reverse("horizon:admin:volumes:index")
+            redirect = reverse("horizon:admin:hpe_storage:index")
             exceptions.handle(request,
-                              _('Unable to create encrypted volume type.'),
+                              _('Unable to create endpoint.'),
                               redirect=redirect)
 
 
@@ -246,7 +246,7 @@ class EditEndpoint(forms.SelfHandlingForm):
                                         'for Cinder backend: %s') % data['backend'])
             return True
         except Exception:
-            redirect = reverse("horizon:admin:volumes:index")
+            redirect = reverse("horizon:admin:hpe_storage:index")
             exceptions.handle(request,
                               _('Unable to update endpoint.'),
                               redirect=redirect)

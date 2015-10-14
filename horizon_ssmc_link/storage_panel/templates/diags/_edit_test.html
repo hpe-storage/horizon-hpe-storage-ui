@@ -1,0 +1,19 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Edit Diagnostic Test.
+      <br>
+      <br>
+      The diagnostic test will connect to the test node via SSH.
+
+      For both Cinder and Nova service nodes, a check will be performed to
+      validate that required software is installed.
+
+      Additionally, for Cinder service nodes, the user cinder.conf file will
+      be checked to verify backend HPE 3PAR storage settings are correct.
+     {% endblocktrans %}
+  </p>
+{% endblock %}

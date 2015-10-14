@@ -1,4 +1,4 @@
-# (c) Copyright [2015] Hewlett-Packard Development Company, L.P.
+# (c) Copyright [2015] Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -59,3 +59,21 @@ class BarbicanAPI(object):
 
     def delete_credentials(self, token, host):
         return self.client.deleteCredentials(token, host)
+
+    def add_diag_test(self, token, test_name, service_type, host_ip,
+                      ssh_name, ssh_pwd, config_path, config_status=None,
+                      software_status=None, run_time=None):
+        return self.client.addDiagTest(token, test_name, service_type,
+                                       host_ip, ssh_name, ssh_pwd,
+                                       config_path, config_status,
+                                       software_status, run_time)
+
+    def get_all_diag_tests(self, token):
+        return self.client.getAllDiagTests(token)
+
+    def get_diag_test(self, token, name):
+        return self.client.getDiagTest(token, name)
+
+    def delete_diag_test(self, token, name):
+        return self.client.deleteDiagTest(token, name)
+

@@ -1,4 +1,4 @@
-# (c) Copyright [2015] Hewlett-Packard Development Company, L.P.
+# (c) Copyright [2015] Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import horizon
 from openstack_dashboard.dashboards.admin import dashboard
 
 
-class SSMCLink(horizon.Panel):
-    name = _("HP Storage")
-    slug = "ssmc_link"
+class HPEStorage(horizon.Panel):
+    name = _("HPE Storage")
+    slug = "hpe_storage"
     # permissions = ('openstack.services.deep_link',)
 
-dashboard.Admin.register(SSMCLink)
+dashboard.Admin.register(HPEStorage)

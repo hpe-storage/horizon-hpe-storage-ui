@@ -1,4 +1,4 @@
-# (c) Copyright [2015] Hewlett-Packard Development Company, L.P.
+# (c) Copyright [2015] Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import horizon_ssmc_link.api.barbican_api as barbican
 class CreateEndpointAction(tables.LinkAction):
     name = "create_endpoint"
     verbose_name = _("Create Link")
-    url = "horizon:admin:ssmc_link:create_endpoint"
+    url = "horizon:admin:hpe_storage:endpoints:create_endpoint"
     classes = ("ajax-modal",)
     icon = "plus"
     policy_rules = (("volume", "volume:deep_link"),)
@@ -38,7 +38,7 @@ class CreateEndpointAction(tables.LinkAction):
 class EditEndpointAction(tables.LinkAction):
     name = "edit_endpoint"
     verbose_name = _("Edit Link")
-    url = "horizon:admin:ssmc_link:edit_endpoint"
+    url = "horizon:admin:hpe_storage:endpoints:edit_endpoint"
     classes = ("ajax-modal",)
     icon = "pencil"
     policy_rules = (("volume", "volume:deep_link"),)

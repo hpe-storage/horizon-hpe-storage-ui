@@ -12,6 +12,20 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import pbr.version
+from django.utils.translation import ugettext_lazy as _
 
-version_info = pbr.version.VersionInfo('horizon_ssmc_link')
+from horizon import tabs
+
+
+class OverviewTab(tabs.Tab):
+    name = _("Overview")
+    slug = "overview"
+    template_name = ("diags/_detail.html")
+
+    def get_context_data(self, request):
+        return {"test": self.tab_group.kwargs['test']}
+
+
+class TestDetailTabs(tabs.TabGroup):
+    slug = "test_details"
+    tabs = (OverviewTab,)

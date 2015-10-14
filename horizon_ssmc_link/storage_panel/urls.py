@@ -1,4 +1,4 @@
-# (c) Copyright [2015] Hewlett-Packard Development Company, L.P.
+# (c) Copyright [2015] Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -12,37 +12,24 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+from django.conf.urls import include
 from django.conf.urls import patterns
 from django.conf.urls import url
 
-# from openstack_dashboard.dashboards.admin.volumes.volumes \
-#     import views
+from horizon_ssmc_link.storage_panel.endpoints \
+    import urls as endpoint_urls
+from horizon_ssmc_link.storage_panel.diags \
+    import urls as diag_urls
+
 from horizon_ssmc_link.storage_panel import views
 
-VIEWS_MOD = ('horizon_ssmc_link.storage_panel.views')
-# VIEWS_MOD = ('dashboards.admin.volumes.volumes.views')
-
 urlpatterns = patterns(
-    VIEWS_MOD,
-    # url(r'^(?P<volume_id>[^/]+)/update_status$',
-    #     views.UpdateStatusView.as_view(),
-    #     name='update_status'),
-    url(r'^$',
-        views.IndexView.as_view(),
-        name='index'),
-    url(r'^(?P<volume_id>[^/]+)/link_to_volume/$',
-        views.LinkVolumeView.as_view(),
-        name='link_to_volume'),
-    url(r'^(?P<volume_id>[^/]+)/link_to_cpg/$',
-        views.LinkVolumeCPGView.as_view(),
-        name='link_to_cpg'),
-    url(r'^(?P<volume_id>[^/]+)/link_to_domain/$',
-        views.LinkVolumeDomainView.as_view(),
-        name='link_to_domain'),
-    url(r'^create_endpoint/$',
-        views.CreateEndpointView.as_view(),
-        name='create_endpoint'),
-    url(r'^(?P<service_id>[^/]+)/edit_endpoint/$',
-        views.EditEndpointView.as_view(),
-        name='edit_endpoint'),
+    '',
+    url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^\?tab=storage_tabs$',
+        views.IndexView.as_view(), name='endpoints_tab'),
+    url(r'^\?tab=storage_tabs$',
+        views.IndexView.as_view(), name='diags_tab'),
+    url(r'', include(endpoint_urls, namespace='endpoints')),
+    url(r'diags/', include(diag_urls, namespace='diags')),
 )

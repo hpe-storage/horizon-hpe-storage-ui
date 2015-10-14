@@ -1,0 +1,67 @@
+{% load i18n sizeformat parse_date %}
+{% load url from future %}
+
+<h3>{% trans "Diagnostic Test Overview" %}</h3>
+
+<div class="info row detail">
+  <h4>{% trans "Information" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+    <dt>{% trans "Name" %}</dt>
+    <dd>{{ test.test_name }}</dd>
+    <dt>{% trans "Last Run" %}</dt>
+    <dd>{{ test.run_time }}</dd>
+    <dt>{% trans "Service Type" %}</dt>
+    <dd>{{ test.service_type }}</dd>
+    <dt>{% trans "Service Node IP" %}</dt>
+    <dd>{{ test.host_ip }}</dd>
+    <dt>{% trans "SSH Username" %}</dt>
+    <dd>{{ test.ssh_name }}</dd>
+    <dt>{% trans "Cinder config file path" %}</dt>
+    <dd>{{ test.config_path }}</dd>
+  </dl>
+</div>
+
+<div class="cinder test row detail">
+  <h4>{% trans "Cinder Backend Test Results" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+  {% for results in test.config_test_results %}
+    <dt>{% trans "Backend Section Name" %}</dt>
+    <dd>{{ results.backend_name }}</dd>
+    <dt>{% trans "CPG" %}</dt>
+    <dd>{{ results.cpg }}</dd>
+    <dt>{% trans "Credentials" %}</dt>
+    <dd>{{ results.credentials }}</dd>
+    <dt>{% trans "WS API" %}</dt>
+    <dd>{{ results.wsapi }}</dd>
+    <dt>{% trans "iSCSI IP(s)" %}</dt>
+    <dd>{{ results.iscsi }}</dd>
+    <dt>{% trans "Driver" %}</dt>
+    <dd>{{ results.driver }}</dd>
+    <p></p>
+    <p></p>
+  {% empty %}
+    <dd><em>{% trans "N/A" %}</em></dd>
+  {% endfor %}
+  </dl>
+</div>
+
+<div class="software test row detail">
+  <h4>{% trans "Software Test Results" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+  {% for results in test.software_test_results %}
+    <dt>{% trans "Softare Package" %}</dt>
+    <dd>{{ results.package }}</dd>
+    <dt>{% trans "Installed" %}</dt>
+    <dd>{{ results.installed }}</dd>
+    <dt>{% trans "Version" %}</dt>
+    <dd>{{ results.version }}</dd>
+    <p></p>
+    <p></p>
+  {% empty %}
+    <dd><em>{% trans "N/A" %}</em></dd>
+  {% endfor %}
+  </dl>
+</div>

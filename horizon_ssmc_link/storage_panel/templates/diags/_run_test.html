@@ -1,0 +1,14 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Run the diagnostic test on the host node.
+      <br>
+      <br>
+      This test may take several minutes to complete.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+
