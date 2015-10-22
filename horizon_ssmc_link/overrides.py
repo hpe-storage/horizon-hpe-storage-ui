@@ -7,55 +7,79 @@ from openstack_dashboard.dashboards.admin.volumes import tabs
 from django.core.urlresolvers import reverse
 
 import logging
+import re
+
+import horizon_ssmc_link.api.keystone_api as keystone
 
 LOG = logging.getLogger(__name__)
 
-class LaunchElementManagerVolume(tables.LinkAction):
+# save off keystone session so we don't have to retrieve it for
+# every volume in the volume table
+keystone_api = None
+
+class BaseElementManager(tables.LinkAction):
+    # launch in new window
+    attrs = {"target": "_blank"}
+    policy_rules = (("volume", "volume:deep_link"),)
+
+    def get_link_url(self, volume):
+        link_url = reverse(self.url, args=[volume.id])
+        return link_url
+
+    def get_deep_link_endpoints(self, request):
+        global keystone_api
+        endpoints = []
+        for i in range(0,2):
+            try:
+                if not keystone_api:
+                    keystone_api = keystone.KeystoneAPI()
+                    keystone_api.do_setup(request)
+
+                endpoints = keystone_api.get_ssmc_endpoints()
+                return endpoints
+            except Exception as ex:
+                # try again, as this may be due to expired keystone session
+                keystone_api = None
+                continue
+
+        return endpoints
+
+    def allowed(self, request, volume=None):
+        # don't allow deep link option if volume is not tied
+        # to an SSMC endpoint
+        if volume:
+            host = getattr(volume, 'os-vol-host-attr:host', None)
+            # pull out host from host name (comes between @ and #)
+            found = re.search('@(.+?)#', host)
+            if found:
+                backend = found.group(1)
+                endpoints = self.get_deep_link_endpoints(request)
+                for endpoint in endpoints:
+                    if endpoint['backend'] == backend:
+                        return True
+
+        return False
+
+
+class LaunchElementManagerVolume(BaseElementManager):
     LOG.info(("Deep Link - launch element manager volume"))
     name = "link_volume"
     verbose_name = _("View Volume in HP 3PAR SSMC")
     url = "horizon:admin:ssmc_link:link_to_volume"
 
-    # launch in new window
-    attrs = {"target": "_blank"}
 
-    policy_rules = (("volume", "volume:deep_link"),)
-
-    def get_link_url(self, volume):
-        link_url = reverse(self.url, args=[volume.id])
-        return link_url
-
-
-class LaunchElementManagerCPG(tables.LinkAction):
+class LaunchElementManagerCPG(BaseElementManager):
     LOG.info(("Deep Link - launch element manager CPG"))
     name = "link_cpg"
     verbose_name = _("View Volume CPG in HP 3PAR SSMC")
     url = "horizon:admin:ssmc_link:link_to_cpg"
 
-    # launch in new window
-    attrs = {"target": "_blank"}
 
-    policy_rules = (("volume", "volume:deep_link"),)
-
-    def get_link_url(self, volume):
-        link_url = reverse(self.url, args=[volume.id])
-        return link_url
-
-
-class LaunchElementManagerDomain(tables.LinkAction):
+class LaunchElementManagerDomain(BaseElementManager):
     LOG.info(("Deep Link - launch element manager domain"))
     name = "link_domain"
     verbose_name = _("View Volume Domain in HP 3PAR SSMC")
     url = "horizon:admin:ssmc_link:link_to_domain"
-
-    # launch in new window
-    attrs = {"target": "_blank"}
-
-    policy_rules = (("volume", "volume:deep_link"),)
-
-    def get_link_url(self, volume):
-        link_url = reverse(self.url, args=[volume.id])
-        return link_url
 
 
 class VolumesTableWithLaunch(volumes_tables.VolumesTable):
