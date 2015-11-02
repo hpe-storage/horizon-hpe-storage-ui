@@ -16,12 +16,12 @@ from django.conf.urls import include
 from django.conf.urls import patterns
 from django.conf.urls import url
 
-from horizon_ssmc_link.storage_panel.endpoints \
+from horizon_hpe_storage.storage_panel.endpoints \
     import urls as endpoint_urls
-from horizon_ssmc_link.storage_panel.diags \
+from horizon_hpe_storage.storage_panel.diags \
     import urls as diag_urls
 
-from horizon_ssmc_link.storage_panel import views
+from horizon_hpe_storage.storage_panel import views
 
 urlpatterns = patterns(
     '',

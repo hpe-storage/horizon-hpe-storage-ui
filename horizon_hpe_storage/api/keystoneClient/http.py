@@ -17,8 +17,8 @@ try:
 except ImportError:
     import simplejson as json
 
-from horizon_ssmc_link.api.common import exceptions
-from horizon_ssmc_link.api.common import http
+from horizon_hpe_storage.api.common import exceptions
+from horizon_hpe_storage.api.common import http
 
 
 class HTTPJSONRESTClient(http.HTTPJSONRESTClient):

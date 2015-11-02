@@ -17,13 +17,13 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import tabs
 
-from horizon_ssmc_link.storage_panel.endpoints \
+from horizon_hpe_storage.storage_panel.endpoints \
     import tables as endpoint_tables
-from horizon_ssmc_link.storage_panel.diags \
+from horizon_hpe_storage.storage_panel.diags \
     import tables as diags_tables
 
-import horizon_ssmc_link.api.keystone_api as keystone
-import horizon_ssmc_link.api.barbican_api as barbican
+import horizon_hpe_storage.api.keystone_api as keystone
+import horizon_hpe_storage.api.barbican_api as barbican
 
 
 class EndpointsTab(tabs.TableTab):

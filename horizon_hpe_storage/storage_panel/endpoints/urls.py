@@ -17,7 +17,7 @@ from django.conf.urls import url
 
 # from openstack_dashboard.dashboards.admin.volumes.volumes \
 #     import views
-from horizon_ssmc_link.storage_panel.endpoints import views
+from horizon_hpe_storage.storage_panel.endpoints import views
 
 VIEWS_MOD = ('horizon_ssmc_link.storage_panel.endpoints.views')
 # VIEWS_MOD = ('dashboards.admin.volumes.volumes.views')

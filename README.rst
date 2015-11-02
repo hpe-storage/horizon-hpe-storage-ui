@@ -1,8 +1,8 @@
-=================
-horizon-ssmc-link
-=================
+======================
+horizon-hpe-storage-ui
+======================
 
-HP Storage Dashboard
+Hewlett Packard Enterprise Storage Dashboard
 
 * Free software: Apache license
 
@@ -11,9 +11,9 @@ Overview
 
 This plug-in extends the OpenStack Horizon Dashboard.
 
-It adds an "HP Storage" panel to the Admin dashboard. When this panel is selected,
+It adds an "HPE Storage" panel to the Admin dashboard. When this panel is selected,
 the associated window will have tabs to manage/view HP Storage related data. One of
-these tabs will be labeled "SSMC Links", which will allow an admin user
+these tabs will be labeled "3PAR SSMC Links", which will allow an admin user
 to associate an HP 3PAR SSMC instance with an OpenStack storage backend (as defined
 by /etc/cinder/cinder.conf).
 
@@ -34,7 +34,7 @@ Add the following to your Devstack local.conf file
 
 ::
 
-    enable_plugin horizon-ssmc-link https://github.com/hp-storage/horizon-ssmc-link.git
+    enable_plugin horizon-hpe-storage-ui https://github.com/hpe-storage/horizon-hpe-storage-ui.git
 
 With Horizon
 ------------
@@ -42,13 +42,13 @@ With Horizon
 ::
 
     git clone http://github.com/openstack/horizon.git
-    git clone https://github.com/hp-storage/horizon-ssmc-link.git
+    git clone https://github.com/hpe-storage/horizon-hpe-storage-ui.git
     cd horizon
     ./run_tests.sh -f
     cp ./openstack_dashboard/local/local_settings.py.example ./opentstack_dashboard/local/local_settings.py
-    pushd ../horizon-ssmc-link
+    pushd ../horizon-hpe-storage-ui
     ../horizon/tools/with_venv.sh pip install --upgrade .
-    cp -a horizon_ssmc_link/enabled/* ../horizon/openstack_dashboard/local/enabled
+    cp -a horizon_hpe_storage/enabled/* ../horizon/openstack_dashboard/local/enabled
     popd
 
     # Start test server
@@ -56,7 +56,7 @@ With Horizon
 
     
 After reloading the Horizon dashboard in your browser, log-in as an "Admin" user. If the plug-in
-was successfully loaded, you should see a new "HP Storage" panel listed at the bottom of the "Admin"
+was successfully loaded, you should see a new "HPE Storage" panel listed at the bottom of the "Admin"
 section.
 
 Uninstalling the plug-in
@@ -64,6 +64,6 @@ Uninstalling the plug-in
 
 Uninstall the python package and remove the config files::
 
-    sudo pip uninstall horizon-ssmc-link
-    rm horizon/openstack_dashboard/local/enabled/_999_ssmc_link_admin_panel.*
+    sudo pip uninstall horizon-hpe-storage-ui
+    rm horizon/openstack_dashboard/local/enabled/_999_hpe_storage_admin_panel.*
 

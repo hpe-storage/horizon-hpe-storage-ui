@@ -23,7 +23,7 @@ from django.core.urlresolvers import reverse
 import logging
 import re
 
-import horizon_ssmc_link.api.keystone_api as keystone
+import horizon_hpe_storage.api.keystone_api as keystone
 
 LOG = logging.getLogger(__name__)
 

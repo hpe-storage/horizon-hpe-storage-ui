@@ -1,2 +1,2 @@
-# settings file for horizon-ssmc-link plug-in
-enable_service horizon-ssmc-link
+# settings file for horizon-hpe-storage-ui plug-in
+enable_service horizon-hpe-storage-ui

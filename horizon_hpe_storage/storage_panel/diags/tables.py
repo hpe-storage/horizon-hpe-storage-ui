@@ -23,8 +23,8 @@ from horizon import tables
 from openstack_dashboard import api
 from openstack_dashboard import policy
 
-import horizon_ssmc_link.api.keystone_api as keystone
-import horizon_ssmc_link.api.barbican_api as barbican
+import horizon_hpe_storage.api.keystone_api as keystone
+import horizon_hpe_storage.api.barbican_api as barbican
 
 
 class CreateTestAction(tables.LinkAction):

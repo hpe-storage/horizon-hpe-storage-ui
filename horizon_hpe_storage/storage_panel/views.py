@@ -16,7 +16,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from horizon import tabs
 
-from horizon_ssmc_link.storage_panel import tabs as project_tabs
+from horizon_hpe_storage.storage_panel import tabs as project_tabs
 
 import logging
 

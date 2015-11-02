@@ -22,7 +22,7 @@ from horizon import forms
 from horizon.utils import memoized
 from openstack_dashboard.api import cinder
 
-from horizon_ssmc_link.storage_panel.diags import forms as diag_forms
+from horizon_hpe_storage.storage_panel.diags import forms as diag_forms
 
 from horizon import tabs
 from openstack_dashboard.dashboards.admin.defaults import tabs as project_tabs
@@ -35,13 +35,13 @@ import base64
 import re
 from urlparse import urlparse
 
-import horizon_ssmc_link.api.hp_ssmc_api as hpssmc
-import horizon_ssmc_link.api.keystone_api as keystone
-import horizon_ssmc_link.api.barbican_api as barbican
+import horizon_hpe_storage.api.hp_ssmc_api as hpssmc
+import horizon_hpe_storage.api.keystone_api as keystone
+import horizon_hpe_storage.api.barbican_api as barbican
 
-from horizon_ssmc_link.storage_panel import tabs as storage_tabs
-from horizon_ssmc_link.storage_panel.diags import tabs as diags_tabs
-from horizon_ssmc_link.storage_panel.diags import tables as diags_tables
+from horizon_hpe_storage.storage_panel import tabs as storage_tabs
+from horizon_hpe_storage.storage_panel.diags import tabs as diags_tabs
+from horizon_hpe_storage.storage_panel.diags import tables as diags_tables
 
 from keystoneclient.v2_0 import client as keystone_client
 
