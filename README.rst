@@ -23,6 +23,9 @@ Requirements
 The OpenStack Barbican service is required for this plug-in.
 (see https://wiki.openstack.org/wiki/Barbican)
 
+The HPE Storage Diagnostic Tool must be installed to enable the "Cinder Diagnostics" features of this plug-in.
+(see https://pypi.python.org/pypi/cinderdiags)
+
 This plug-in is only intended for use on systems running Horizon.
 
 Installation instructions
@@ -34,6 +37,7 @@ Add the following to your Devstack local.conf file
 
 ::
 
+    enable-plugin barbican https://github.com/openstack/barbican.git
     enable_plugin horizon-hpe-storage-ui https://github.com/hpe-storage/horizon-hpe-storage-ui.git
 
 With Horizon
