@@ -222,7 +222,8 @@ class LinkVolumeView(BaseLinkView):
             exceptions.handle(self.request,
                               err.message,
                               redirect=url)
-        except Exception:
+        except Exception as err:
+            LOG.info(("deep-link error = %s") % err.message)
             exceptions.handle(self.request,
                               _('Unable to retrieve volume details.'),
                               redirect=self.success_url)
@@ -278,7 +279,8 @@ class LinkVolumeCPGView(BaseLinkView):
             exceptions.handle(self.request,
                               err.message,
                               redirect=url)
-        except Exception:
+        except Exception as err:
+            LOG.info(("deep-link error = %s") % err.message)
             exceptions.handle(self.request,
                               _('Unable to retrieve volume details.'),
                               redirect=self.success_url)
@@ -334,7 +336,8 @@ class LinkVolumeDomainView(BaseLinkView):
             exceptions.handle(self.request,
                               err.message,
                               redirect=url)
-        except Exception:
+        except Exception as err:
+            LOG.info(("deep-link error = %s") % err.message)
             exceptions.handle(self.request,
                               _('Unable to retrieve volume details.'),
                               redirect=self.success_url)
