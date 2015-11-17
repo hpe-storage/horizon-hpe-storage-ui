@@ -12,9 +12,9 @@ Overview
 This plug-in extends the OpenStack Horizon Dashboard.
 
 It adds an "HPE Storage" panel to the Admin dashboard. When this panel is selected,
-the associated window will have tabs to manage/view HP Storage related data. One of
+the associated window will have tabs to manage/view HPE Storage related data. One of
 these tabs will be labeled "3PAR SSMC Links", which will allow an admin user
-to associate an HP 3PAR SSMC instance with an OpenStack storage backend (as defined
+to associate an HPE 3PAR SSMC instance with an OpenStack storage backend (as defined
 by /etc/cinder/cinder.conf).
 
 Requirements
