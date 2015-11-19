@@ -31,29 +31,25 @@ This plug-in is only intended for use on systems running Horizon.
 Installation instructions
 -------------------------
 
-With Devstack
--------------
-
-Add the following to your Devstack local.conf file::
+In a Devstack environment, add the following to your Devstack local.conf file::
 
     enable-plugin barbican https://github.com/openstack/barbican.git
     enable_plugin horizon-hpe-storage-ui https://github.com/hpe-storage/horizon-hpe-storage-ui.git
 
-With Horizon
-------------
-::
 
-    git clone http://github.com/openstack/horizon.git
-    git clone https://github.com/hpe-storage/horizon-hpe-storage-ui.git
+Or, to add to an existing Horizon virtual environment::
+
     cd horizon
-    ./run_tests.sh -f
-    cp ./openstack_dashboard/local/local_settings.py.example ./opentstack_dashboard/local/local_settings.py
-    pushd ../horizon-hpe-storage-ui
+    cd ..
+    # create new package directory at same root path as Horizon
+    git clone https://github.com/hpe-storage/horizon-hpe-storage-ui.git
+    cd horizon-hpe-storage-ui
     ../horizon/tools/with_venv.sh pip install --upgrade .
+    # copy configuration file so that Horizon loads the plug-in
     cp -a horizon_hpe_storage/enabled/* ../horizon/openstack_dashboard/local/enabled
-    popd
 
-    # Start test server
+    # re-start Horizon. One way is to start a test server -
+    cd ../horizon
     ./run_tests.sh --runserver 127.0.0.1:18000
 
     
