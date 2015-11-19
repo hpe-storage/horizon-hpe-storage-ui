@@ -3,4 +3,4 @@
 # process, which may cause wedges in the gate later.
 
 # other tabs within our plug-in panel
-cinderdiags>=1.0,<2.0
+cinderdiags>=1.0.2

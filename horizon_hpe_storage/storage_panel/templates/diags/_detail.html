@@ -23,21 +23,21 @@
 </div>
 
 <div class="cinder test row detail">
-  <h4>{% trans "Cinder Backend Test Results" %}</h4>
+  <h4>{% trans "Cinder Backend Test Results<br><i>(tests are performed using values specified in cinder.conf)</i>" %}</h4>
   <hr class="header_rule">
   <dl class="dl-horizontal">
   {% for results in test.config_test_results %}
     <dt>{% trans "Backend Section Name" %}</dt>
     <dd>{{ results.backend_name }}</dd>
-    <dt>{% trans "CPG" %}</dt>
+    <dt>{% trans "CPG exists" %}</dt>
     <dd>{{ results.cpg }}</dd>
-    <dt>{% trans "Credentials" %}</dt>
+    <dt>{% trans "Credentials are valid" %}</dt>
     <dd>{{ results.credentials }}</dd>
-    <dt>{% trans "WS API" %}</dt>
+    <dt>{% trans "WS API url connection" %}</dt>
     <dd>{{ results.wsapi }}</dd>
-    <dt>{% trans "iSCSI IP(s)" %}</dt>
+    <dt>{% trans "iSCSI IP(s) are valid" %}</dt>
     <dd>{{ results.iscsi }}</dd>
-    <dt>{% trans "Driver" %}</dt>
+    <dt>{% trans "Volume Driver exists" %}</dt>
     <dd>{{ results.driver }}</dd>
     <p></p>
     <p></p>

@@ -43,6 +43,7 @@ Or, to add to an existing Horizon virtual environment::
     cd ..
     # create new package directory at same root path as Horizon
     git clone https://github.com/hpe-storage/horizon-hpe-storage-ui.git
+    # install package
     cd horizon-hpe-storage-ui
     ../horizon/tools/with_venv.sh pip install --upgrade .
     # copy configuration file so that Horizon loads the plug-in
