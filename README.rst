@@ -1,13 +1,13 @@
-======================
+===============================
 horizon-hpe-storage-ui
-======================
+===============================
 
 Hewlett Packard Enterprise Storage Dashboard
 
 * Free software: Apache license
 
 Overview
-========
+---------
 
 This plug-in extends the OpenStack Horizon Dashboard.
 
@@ -18,7 +18,7 @@ to associate an HPE 3PAR SSMC instance with an OpenStack storage backend (as def
 by /etc/cinder/cinder.conf).
 
 Requirements
-============
+------------
 
 The OpenStack Barbican service is required for this plug-in.
 (see https://wiki.openstack.org/wiki/Barbican)
@@ -29,20 +29,18 @@ The HPE Storage Diagnostic Tool must be installed to enable the "Cinder Diagnost
 This plug-in is only intended for use on systems running Horizon.
 
 Installation instructions
-=========================
+-------------------------
 
 With Devstack
-------------
-Add the following to your Devstack local.conf file
+-------------
 
-::
+Add the following to your Devstack local.conf file::
 
     enable-plugin barbican https://github.com/openstack/barbican.git
     enable_plugin horizon-hpe-storage-ui https://github.com/hpe-storage/horizon-hpe-storage-ui.git
 
 With Horizon
 ------------
-
 ::
 
     git clone http://github.com/openstack/horizon.git

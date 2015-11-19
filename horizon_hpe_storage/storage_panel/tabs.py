@@ -13,9 +13,11 @@
 #    limitations under the License.
 
 from django.utils.translation import ugettext_lazy as _
+from operator import itemgetter
 
 from horizon import exceptions
 from horizon import tabs
+from horizon.utils import functions as utils
 
 from horizon_hpe_storage.storage_panel.endpoints \
     import tables as endpoint_tables
@@ -73,11 +75,12 @@ class DiagsTab(tabs.TableTab):
             barbican_api = barbican.BarbicanAPI()
             barbican_api.do_setup(None)
             tests = barbican_api.get_all_diag_tests(token)
+            sorted_tests = sorted(tests, key=itemgetter('test_name'))
 
         except Exception:
             msg = _('Unable to retrieve diagnostic test list.')
             exceptions.handle(self.request, msg)
-        return tests
+        return sorted_tests
 
 
 class StorageTabs(tabs.TabGroup):
