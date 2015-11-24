@@ -24,6 +24,6 @@ ADD_PANEL = 'horizon_hpe_storage.storage_panel.panel.HPEStorage'
 
 ADD_INSTALLED_APPS = ['horizon_hpe_storage.storage_panel']
 
-# overrides is now done in storage_panel/endpoints/config/__init__
-# UPDATE_HORIZON_CONFIG = { 'customization_module': 'horizon_hpe_storage.overrides', }
+# override default behavior for admin->volumes
+UPDATE_HORIZON_CONFIG = { 'customization_module': 'horizon_hpe_storage.overrides', }
 
