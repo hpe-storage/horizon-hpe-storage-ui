@@ -389,16 +389,23 @@ class RunTest(forms.SelfHandlingForm):
             if self.errors_occurred:
                 LOG.info(("%s") % self.error_text)
                 # use better error messages
+                error_type_found = False
                 error_text = 'Test could not be completed due to the following issue(s):'
                 if "invalid ssh" in self.error_text.lower():
                     error_text += ('<li>' + "Invalid SSH credentials" + '</li>')
+                    error_type_found = True
                 if "unable to connect" in self.error_text.lower():
                     error_text += ('<li>' + "Unable to connect to host: " +
                                    cinder_data['host_ip'] + '</li>')
+                    error_type_found = True
                 if "unable to copy" in self.error_text.lower():
                     error_text += ('<li>' + "Host Cinder config file path not found: " +
                                    '</li>' +
                                    '<li>' + cinder_data['conf_source'] + '</li>')
+                    error_type_found = True
+                if not error_type_found:
+                    error_text += ('<li>' + "Check Horizon logs for more details" + '</li>')
+
                 # use HTML markup for better formatted text
                 status = mark_safe(error_text)
                 raise ValidationError(status)
@@ -421,16 +428,22 @@ class RunTest(forms.SelfHandlingForm):
             if self.errors_occurred:
                 LOG.info(("%s") % self.error_text)
                 # use better error messages
+                error_type_found = False
                 error_text = 'Test could not be completed due to the following issue(s):'
                 if "invalid ssh" in self.error_text.lower():
                     error_text += ('<li>' + "Invalid SSH credentials" + '</li>')
+                    error_type_found = True
                 if "unable to connect" in self.error_text.lower():
                     error_text += ('<li>' + "Unable to connect to host: " +
                                    nova_data['host_ip'] + '</li>')
+                    error_type_found = True
                 if "unable to copy" in self.error_text.lower():
                     error_text += ('<li>' + "Host Cinder config file path not found: " +
                                    '</li>' +
                                    '<li>' + nova_data['conf_source'] + '</li>')
+                    error_type_found = True
+                if not error_type_found:
+                    error_text += ('<li>' + "Check Horizon logs for more details" + '</li>')
                 # use HTML markup for better formatted text
                 status = mark_safe(error_text)
                 raise ValidationError(status)

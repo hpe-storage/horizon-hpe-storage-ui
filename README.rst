@@ -33,11 +33,11 @@ Installation instructions
 
 In a Devstack environment, add the following to your Devstack local.conf file::
 
-    enable-plugin barbican https://github.com/openstack/barbican.git
+    enable_plugin barbican https://github.com/openstack/barbican.git
     enable_plugin horizon-hpe-storage-ui https://github.com/hpe-storage/horizon-hpe-storage-ui.git
 
 
-Or, to add to an existing Horizon virtual environment::
+Or, to add to existing OpenStack deployment::
 
     cd horizon
     cd ..
@@ -45,13 +45,13 @@ Or, to add to an existing Horizon virtual environment::
     git clone https://github.com/hpe-storage/horizon-hpe-storage-ui.git
     # install package
     cd horizon-hpe-storage-ui
-    ../horizon/tools/with_venv.sh pip install --upgrade .
+    sudo pip install --upgrade .
     # copy configuration file so that Horizon loads the plug-in
     cp -a horizon_hpe_storage/enabled/* ../horizon/openstack_dashboard/local/enabled
 
-    # re-start Horizon. One way is to start a test server -
+    # re-start apache server running Horizon
     cd ../horizon
-    ./run_tests.sh --runserver 127.0.0.1:18000
+    sudo service apache2 restart
 
     
 After reloading the Horizon dashboard in your browser, log-in as an "Admin" user. If the plug-in
@@ -64,5 +64,5 @@ Uninstalling the plug-in
 Uninstall the python package and remove the config files::
 
     sudo pip uninstall horizon-hpe-storage-ui
-    rm horizon/openstack_dashboard/local/enabled/_999_hpe_storage_admin_panel.*
+    rm horizon/openstack_dashboard/local/enabled/*_hpe_storage_admin_panel.*
 
