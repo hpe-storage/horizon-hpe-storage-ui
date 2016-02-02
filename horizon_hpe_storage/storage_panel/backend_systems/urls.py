@@ -15,25 +15,22 @@
 from django.conf.urls import patterns
 from django.conf.urls import url
 
-from horizon_hpe_storage.storage_panel.diags import views
+from horizon_hpe_storage.storage_panel.backend_systems import views
 
-VIEWS_MOD = ('horizon_hpe_storage.storage_panel.diags.views')
+VIEWS_MOD = ('horizon_hpe_storage.storage_panel.backend_systems.views')
 
 urlpatterns = patterns(
     VIEWS_MOD,
     url(r'^$',
         views.IndexView.as_view(),
         name='index'),
-    url(r'^(?P<test_name>[^/]+)/run_test/$',
-        views.RunTestView.as_view(),
-        name='run_test'),
-    url(r'^create_test/$',
-        views.CreateTestView.as_view(),
-        name='create_test'),
-    url(r'^(?P<test_name>[^/]+)/edit_test/$',
-        views.EditTestView.as_view(),
-        name='edit_test'),
-    url(r'^(?P<test_name>[^/]+)/$',
-        views.DetailView.as_view(),
-        name='detail'),
+    url(r'^(?P<pool_name>[^/]+)/$',
+        views.PoolDetailView.as_view(),
+        name='pool_details'),
+    url(r'^(?P<system_info>[^/]+)/license_detail$',
+        views.LicenseDetailView.as_view(),
+        name='license_detail'),
+    url(r'^(?P<pool_name>[^/]+)/capability_detail$',
+        views.PoolDetailView.as_view(),
+        name='capability_detail'),
 )

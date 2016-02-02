@@ -12,16 +12,11 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from django.core.cache import cache
-from django.template import defaultfilters as filters
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext_lazy
 
 from horizon import forms
 from horizon import tables
-
-from openstack_dashboard import api
-from openstack_dashboard import policy
 
 import horizon_hpe_storage.api.keystone_api as keystone
 import horizon_hpe_storage.api.barbican_api as barbican
@@ -62,7 +57,7 @@ class DeleteTestAction(tables.DeleteAction):
 
 class RunTestAction(tables.LinkAction):
     name = "run_test"
-    verbose_name = _("Run Diagnostic Test")
+    verbose_name = _("Run Test & Discovery")
     url = "horizon:admin:hpe_storage:diags:run_test"
     classes = ("ajax-modal",)
 
@@ -87,9 +82,8 @@ def render_service_type(test):
 class DiagsTable(tables.DataTable):
     test_name = tables.Column(
         'test_name',
-        verbose_name=_('Test Name'),
-        form_field=forms.CharField(max_length=64),
-        link="horizon:admin:hpe_storage:diags:detail")
+        verbose_name=_('Test'),
+        form_field=forms.CharField(max_length=64))
     service_type = tables.Column(
         render_service_type,
         verbose_name=_('Service Type'),
@@ -108,15 +102,19 @@ class DiagsTable(tables.DataTable):
         form_field=forms.CharField(max_length=64))
     last_run = tables.Column(
         'run_time',
-        verbose_name=_('Last Successful Run'),
-        form_field=forms.CharField(max_length=64))
+        verbose_name=_('Last Run'),
+        form_field=forms.CharField(max_length=64),
+        link="horizon:admin:hpe_storage:diags:detail")
 
     def get_object_id(self, test):
         return test['test_name']
 
     class Meta(object):
         name = "diags"
-        verbose_name = _("Cinder Diagnostics")
-        # hidden_title = False
-        table_actions = (CreateTestAction, DeleteTestAction,)
-        row_actions = (RunTestAction, EditTestAction, DeleteTestAction,)
+        verbose_name = _("Cinder Diagnostics and Backend Storage System Discovery")
+        hidden_title = False
+        table_actions = (CreateTestAction,
+                         DeleteTestAction,)
+        row_actions = (RunTestAction,
+                       EditTestAction,
+                       DeleteTestAction)

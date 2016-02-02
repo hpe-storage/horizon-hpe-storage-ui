@@ -54,3 +54,21 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         except Exception as ex:
             exceptions.handle(self.request,
                               ('Unable to get Cinder pools.'))
+
+    def getHostCapabilities(self, token, tenant_id, host):
+        try:
+            capabilities = []
+            self.auth_try = 1
+            header = {'X-Auth-Token': token}
+            resp, body = self.get('/v2/' + tenant_id +
+                                  '/capabilities/' + host,
+                                  headers=header)
+            if body and 'properties' in body:
+                properties = body['properties']
+                for property in properties:
+                    capabilities.append(property)
+
+            return capabilities
+        except Exception as ex:
+            exceptions.handle(self.request,
+                              ('Unable to get Host capabilities.'))

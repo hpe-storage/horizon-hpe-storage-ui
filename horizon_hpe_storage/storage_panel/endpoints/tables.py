@@ -19,9 +19,6 @@ from django.utils.translation import ungettext_lazy
 from horizon import forms
 from horizon import tables
 
-from openstack_dashboard import api
-from openstack_dashboard import policy
-
 import horizon_hpe_storage.api.keystone_api as keystone
 import horizon_hpe_storage.api.barbican_api as barbican
 
@@ -98,8 +95,8 @@ class EndpointsTable(tables.DataTable):
 
     class Meta(object):
         name = "endpoints"
-        verbose_name = _("Backend EndPoints")
-        # hidden_title = False
+        verbose_name = _("Links Between Cinder Backends and SSMC Instances")
+        hidden_title = False
         table_actions = (CreateEndpointAction,
                          DeleteEndpointAction,)
         row_actions = (EditEndpointAction,

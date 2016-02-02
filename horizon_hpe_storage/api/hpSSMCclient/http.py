@@ -55,7 +55,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             # first check if old token is still valid
             if token is not None:
                 header = {'Authorization': token}
-                resp, body = self.get('/foundation/REST/sessionservice/sessions/' + token + '/context', headers=header)
+                resp, body = self.get('/foundation/REST/sessionservice/sessions/' + token, headers=header)
                 if body and 'availableSystems' in body:
                     self.auth_try = 0
                     self.user = user

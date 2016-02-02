@@ -1,13 +1,10 @@
 {% load i18n sizeformat parse_date %}
-{% load url from future %}
 
 <h3>{% trans "Diagnostic Test Overview" %}</h3>
 
-<div class="info row detail">
-  <h4>{% trans "Information" %}</h4>
-  <hr class="header_rule">
+<div class="detail">
   <dl class="dl-horizontal">
-    <dt>{% trans "Name" %}</dt>
+    <dt>{% trans "Test Name" %}</dt>
     <dd>{{ test.test_name }}</dd>
     <dt>{% trans "Last Run" %}</dt>
     <dd>{{ test.run_time }}</dd>
@@ -20,9 +17,7 @@
     <dt>{% trans "Cinder config file path" %}</dt>
     <dd>{{ test.config_path }}</dd>
   </dl>
-</div>
 
-<div class="cinder test row detail">
   <h4>{% trans "Cinder Backend Test Results<br><i>(tests are performed using values specified in cinder.conf)</i>" %}</h4>
   <hr class="header_rule">
   <dl class="dl-horizontal">
@@ -45,9 +40,7 @@
     <dd><em>{% trans "N/A" %}</em></dd>
   {% endfor %}
   </dl>
-</div>
 
-<div class="software test row detail">
   <h4>{% trans "Software Test Results" %}</h4>
   <hr class="header_rule">
   <dl class="dl-horizontal">

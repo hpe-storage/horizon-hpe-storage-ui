@@ -12,7 +12,6 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.core.urlresolvers import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
@@ -20,30 +19,17 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import exceptions
 from horizon import forms
 from horizon.utils import memoized
-from openstack_dashboard.api import cinder
 
 from horizon_hpe_storage.storage_panel.diags import forms as diag_forms
 
 from horizon import tabs
-from openstack_dashboard.dashboards.admin.defaults import tabs as project_tabs
 
-from horizon import tables
-from horizon import tabs
-
-import uuid
-import base64
-import re
-from urlparse import urlparse
-
-import horizon_hpe_storage.api.hp_ssmc_api as hpssmc
 import horizon_hpe_storage.api.keystone_api as keystone
 import horizon_hpe_storage.api.barbican_api as barbican
 
 from horizon_hpe_storage.storage_panel import tabs as storage_tabs
 from horizon_hpe_storage.storage_panel.diags import tabs as diags_tabs
-from horizon_hpe_storage.storage_panel.diags import tables as diags_tables
 
-from keystoneclient.v2_0 import client as keystone_client
 
 import logging
 
@@ -53,22 +39,19 @@ LOG = logging.getLogger(__name__)
 class IndexView(tabs.TabbedTableView):
     tab_group_class = storage_tabs.StorageTabs
     template_name = 'diags/index.html'
-    page_title = _("HP Storage")
+    # page_title = _("HP Storage")
 
 
 class DetailView(tabs.TabView):
     tab_group_class = diags_tabs.TestDetailTabs
-    template_name = 'diags/detail.html'
-    page_title = _("Test Details: {{ test.test_name }}")
+    template_name = 'horizon/common/_detail.html'
+    page_title = "{{ test.test_name }}"
 
     def get_context_data(self, **kwargs):
         context = super(DetailView, self).get_context_data(**kwargs)
         test_results = self.get_data()
-        table = diags_tables.DiagsTable(self.request)
-        # context['test'] = test['test_results']
         context['test'] = test_results
         context['url'] = self.get_redirect_url()
-        # context['actions'] = table.render_row_actions(test)
         return context
 
     @memoized.memoized_method
@@ -107,6 +90,8 @@ class DetailView(tabs.TabView):
 
             config_status = test['config_test_status']
             backend_sections = []
+            backend_systems = []
+            self.backend_serial_numbers = []
             backends = config_status.split("Backend Section:")
             for backend in backends:
                 if backend:
@@ -114,13 +99,20 @@ class DetailView(tabs.TabView):
                     disp_results = {}
                     disp_results['backend_name'] = "[" + raw_results[0] + "]"
                     for raw_result in raw_results:
-                        if ":" in raw_result:
-                            key, value = raw_result.split(":")
-                            disp_results[key] = value
+                        if raw_result.startswith('system_info'):
+                            data = self.get_backend_system_info(
+                                raw_result[12:])
+                            if data:
+                                backend_systems.append(data)
+                        else:
+                            if ":" in raw_result:
+                                key, value = raw_result.split(":")
+                                disp_results[key] = value
 
                     backend_sections.append(disp_results)
 
             test_results['config_test_results'] = backend_sections
+            test_results['systems_info'] = backend_systems
 
             software_status = test['software_test_status']
             node_groups = []
@@ -145,6 +137,27 @@ class DetailView(tabs.TabView):
                               _('Unable to retrieve test details.'),
                               redirect=redirect)
         return test_results
+
+    def get_backend_system_info(self, data):
+        # pull all of the data out
+        disp_results = {}
+        items = data.split(";;")
+        for item in items:
+            key, value = item.split(":")
+            if key == "licenses":
+                licenses = value.split(";")
+                disp_results[key] = licenses
+            elif key == "serial_number":
+                # don't display same system twice
+                if value in self.backend_serial_numbers:
+                    return None
+                else:
+                    disp_results[key] = value
+                    self.backend_serial_numbers.append(value)
+            else:
+                disp_results[key] = value
+
+        return disp_results
 
     def get_redirect_url(self):
         return reverse('horizon:admin:hpe_storage:index')

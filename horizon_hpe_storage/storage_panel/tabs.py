@@ -17,12 +17,13 @@ from operator import itemgetter
 
 from horizon import exceptions
 from horizon import tabs
-from horizon.utils import functions as utils
 
 from horizon_hpe_storage.storage_panel.endpoints \
     import tables as endpoint_tables
 from horizon_hpe_storage.storage_panel.diags \
     import tables as diags_tables
+from horizon_hpe_storage.storage_panel.backend_systems \
+    import tables as backend_tables
 
 import horizon_hpe_storage.api.keystone_api as keystone
 import horizon_hpe_storage.api.barbican_api as barbican
@@ -59,32 +60,121 @@ class EndpointsTab(tabs.TableTab):
 
 class DiagsTab(tabs.TableTab):
     table_classes = (diags_tables.DiagsTable,)
-    name = _("Cinder Diagnostics")
+                     # endpoint_tables.EndpointsTable,)
+    name = _("Cinder Diagnostics & Discovery")
     slug = "diags_tab"
     template_name = "horizon/common/_detail_table.html"
 
     def get_diags_data(self):
         tests = []
+        sorted_tests = []
 
         try:
             keystone_api = keystone.KeystoneAPI()
             keystone_api.do_setup(self.request)
             token = keystone_api.get_session_key()
 
-            # grab all test from barbican
+            # grab all tests from barbican
             barbican_api = barbican.BarbicanAPI()
             barbican_api.do_setup(None)
             tests = barbican_api.get_all_diag_tests(token)
             sorted_tests = sorted(tests, key=itemgetter('test_name'))
 
-        except Exception:
+        except Exception as ex:
             msg = _('Unable to retrieve diagnostic test list.')
             exceptions.handle(self.request, msg)
         return sorted_tests
 
 
+class BackendsTab(tabs.TableTab):
+    table_classes = (backend_tables.BackendsTable,)
+    name = _("Backend Storage Systems")
+    slug = "backends_tab"
+    template_name = "horizon/common/_detail_table.html"
+
+    def get_backends_data(self):
+        backend_systems = []
+
+        try:
+            keystone_api = keystone.KeystoneAPI()
+            keystone_api.do_setup(self.request)
+            token = keystone_api.get_session_key()
+
+            # grab all tests from barbican
+            barbican_api = barbican.BarbicanAPI()
+            barbican_api.do_setup(None)
+            tests = barbican_api.get_all_diag_tests(token)
+
+            # now generate backend system info from tests
+            for test in tests:
+                config_status = test['config_test_status']
+                backends = config_status.split("Backend Section:")
+                for backend in backends:
+                    if backend:
+                        raw_results = backend.split("::")
+                        disp_results = {}
+                        disp_results['backend_name'] = "[" + raw_results[0] + "]"
+                        for raw_result in raw_results:
+                            if raw_result.startswith('system_info'):
+                                data = self.get_backend_system_info(
+                                    raw_result[12:])
+                                data['test_name'] = test['test_name']
+                                backend_systems.append(data)
+
+            backend_systems = self.trim_backend_list(backend_systems)
+
+        except Exception as ex:
+            msg = _('Unable to retrieve diagnostic test list.')
+            exceptions.handle(self.request, msg)
+
+        return backend_systems
+
+    def get_backend_system_info(self, data):
+        # pull all of the data out
+        disp_results = {}
+        items = data.split(";;")
+        for item in items:
+            key, value = item.split(":")
+            if key == "licenses":
+                licenses = value.split(";")
+                disp_results[key] = licenses
+            else:
+                disp_results[key] = value
+
+        return disp_results
+
+    def trim_backend_list(self, cur_backend_list):
+        new_backend_list = []
+        # we only want to show each system once, but we need to combine all the cpgs
+        for cur_backend in cur_backend_list:
+            is_dup = False
+            for new_backend in new_backend_list:
+                if cur_backend['serial_number'] == new_backend['serial_number']:
+                    # this is a duplicate
+                    is_dup = True
+                    cur_cpgs = cur_backend['cpgs'].split(',')
+                    new_cpgs = new_backend['cpgs'].split(',')
+                    for cur_cpg in cur_cpgs:
+                        add_cpg = True
+                        for new_cpg in new_cpgs:
+                            # if cpg doesn't already exist for system, add it
+                            if cur_cpg == new_cpg:
+                                # already exists
+                                add_cpg = False
+                                break
+                        if add_cpg:
+                            # update the cpgs for the new list
+                            temp_list = new_backend['cpgs']
+                            new_backend['cpgs'] = temp_list + "," + cur_cpg
+
+            if not is_dup:
+                new_backend_list.append(cur_backend)
+
+        return new_backend_list
+
+
 class StorageTabs(tabs.TabGroup):
     slug = "storage_tabs"
-    tabs = (EndpointsTab, DiagsTab)
+    tabs = (EndpointsTab, DiagsTab, BackendsTab)
     sticky = True
-    show_single_tab = True
+    # show_single_tab = True

@@ -14,13 +14,24 @@
 
 from django.utils.translation import ugettext_lazy as _
 
-import horizon
+from horizon import forms
+from horizon import tables
 
-from openstack_dashboard.dashboards.admin import dashboard
 
-class HPEStorage(horizon.Panel):
-    name = _("HPE Storage")
-    slug = "hpe_storage"
-    # permissions = ('openstack.services.deep_link',)
+class CapabilityTable(tables.DataTable):
+    capbility = tables.Column(
+        'capability',
+        verbose_name=_('Capability'),
+        form_field=forms.CharField(max_length=64))
+    value = tables.Column(
+        'value',
+        verbose_name=_('Value'),
+        form_field=forms.CharField(max_length=64))
 
-dashboard.Admin.register(HPEStorage)
+    class Meta(object):
+        name = "capabilities"
+        verbose_name = _("Storage Pool Capabilities")
+        # hidden_title = False
+
+    def get_object_id(self, datum):
+        return datum.get('capability', id(datum))

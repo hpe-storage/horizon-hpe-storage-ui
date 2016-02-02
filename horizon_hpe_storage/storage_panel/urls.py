@@ -20,6 +20,8 @@ from horizon_hpe_storage.storage_panel.endpoints \
     import urls as endpoint_urls
 from horizon_hpe_storage.storage_panel.diags \
     import urls as diag_urls
+from horizon_hpe_storage.storage_panel.backend_systems \
+    import urls as backend_urls
 
 from horizon_hpe_storage.storage_panel import views
 
@@ -32,4 +34,7 @@ urlpatterns = patterns(
         views.IndexView.as_view(), name='diags_tab'),
     url(r'', include(endpoint_urls, namespace='endpoints')),
     url(r'diags/', include(diag_urls, namespace='diags')),
+    url(r'^backend_systems/',
+        include(backend_urls,
+                namespace='backend_systems')),
 )

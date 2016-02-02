@@ -15,18 +15,12 @@
 from django.conf.urls import patterns
 from django.conf.urls import url
 
-# from openstack_dashboard.dashboards.admin.volumes.volumes \
-#     import views
 from horizon_hpe_storage.storage_panel.endpoints import views
 
-VIEWS_MOD = ('horizon_ssmc_link.storage_panel.endpoints.views')
-# VIEWS_MOD = ('dashboards.admin.volumes.volumes.views')
+VIEWS_MOD = ('horizon_hpe_storage.storage_panel.endpoints.views')
 
 urlpatterns = patterns(
     VIEWS_MOD,
-    # url(r'^(?P<volume_id>[^/]+)/update_status$',
-    #     views.UpdateStatusView.as_view(),
-    #     name='update_status'),
     url(r'^(?P<volume_id>[^/]+)/link_to_volume/$',
         views.LinkVolumeView.as_view(),
         name='link_to_volume'),

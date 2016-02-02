@@ -1,0 +1,25 @@
+{% load i18n sizeformat parse_date %}
+
+<h3>{% trans "Backend System Information" %}</h3>
+
+<div class="detail">
+  <dl class="dl-horizontal">
+  {% for info in test.systems_info %}
+    <hr class="header_rule">
+    <dt>{% trans "System Name" %}</dt>
+    <dd>{{ info.name }}</dd>
+    <dt>{% trans "Model" %}</dt>
+    <dd>{{ info.model }}</dd>
+    <dt>{% trans "OS Version" %}</dt>
+    <dd>{{ info.os_version }}</dd>
+    <dt>{% trans "Serial Number" %}</dt>
+    <dd>{{ info.serial_number }}</dd>
+    <dt>{% trans "Enabled Features" %}</dt>
+    {% for license in info.licenses %}
+      <dd>{{ license }}</dd>
+    {% endfor %}
+    <p></p>
+    <p></p>
+  {% endfor %}
+  </dl>
+</div>

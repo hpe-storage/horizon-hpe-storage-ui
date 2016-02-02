@@ -8,12 +8,20 @@
       <br>
       <br>
       The diagnostic test will connect to the test node via SSH.
-
-      For both Cinder and Nova service nodes, a check will be performed to
-      validate that required software is installed.
-
-      Additionally, for Cinder service nodes, the user cinder.conf file will
+      <br>
+      <br>
+      For Cinder service nodes, the cinder.conf configuration file will
       be checked to verify backend HPE 3PAR storage settings are correct.
+      <br>
+      <br>
+      Additionally, for both Cinder and Nova service nodes, a check will be performed to
+      validate that required software is installed.
+      <br>
+      <br>
+      <br>
+      ** For Cinder service node tests, an attempt will be made to access all backend
+      storage systems specified in "cinder.conf". Once verified and validated, the systems
+      can be viewed in the "Backend Storage" tab of this panel.
      {% endblocktrans %}
   </p>
 {% endblock %}

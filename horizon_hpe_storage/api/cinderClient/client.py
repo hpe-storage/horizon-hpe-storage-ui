@@ -75,3 +75,5 @@ class CinderClient(object):
     def getCinderPools(self, token, tenant_id):
         return self.http.getCinderPools(token, tenant_id)
 
+    def getHostCapabilities(self, token, tenant_id, host):
+        return self.http.getHostCapabilities(token, tenant_id, host)

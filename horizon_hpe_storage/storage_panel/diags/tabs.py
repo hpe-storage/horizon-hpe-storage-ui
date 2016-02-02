@@ -18,9 +18,18 @@ from horizon import tabs
 
 
 class OverviewTab(tabs.Tab):
-    name = _("Overview")
+    name = _("Test Results")
     slug = "overview"
-    template_name = ("diags/_detail.html")
+    template_name = ("diags/_detail_overview.html")
+
+    def get_context_data(self, request):
+        return {"test": self.tab_group.kwargs['test']}
+
+
+class SystemInfoTab(tabs.Tab):
+    name = _("Storage System Information")
+    slug = "systems"
+    template_name = ("diags/_system_overview.html")
 
     def get_context_data(self, request):
         return {"test": self.tab_group.kwargs['test']}
@@ -28,4 +37,7 @@ class OverviewTab(tabs.Tab):
 
 class TestDetailTabs(tabs.TabGroup):
     slug = "test_details"
+    # tabs = (OverviewTab, SystemInfoTab)
+    # only show test results. System info has its own panel.
+    # but keep around as example of having tabbed detail panel
     tabs = (OverviewTab,)

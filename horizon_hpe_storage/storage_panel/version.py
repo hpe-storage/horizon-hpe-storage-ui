@@ -14,4 +14,4 @@
 
 import pbr.version
 
-version_info = pbr.version.VersionInfo('horizon_ssmc_link')
+version_info = pbr.version.VersionInfo('horizon_hpe_storage')

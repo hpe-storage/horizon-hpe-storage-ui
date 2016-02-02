@@ -56,11 +56,8 @@ class CreateEndpointView(forms.ModalFormView):
     template_name = 'endpoints/create_endpoint.html'
     submit_label = _("Create Link")
     submit_url = reverse_lazy("horizon:admin:hpe_storage:endpoints:create_endpoint")
-    success_url = 'horizon:admin:hpe_storage:index'
+    success_url = reverse_lazy('horizon:admin:hpe_storage:index')
     page_title = _("Create SSMC Link")
-
-    def get_success_url(self):
-        return reverse(self.success_url)
 
 
 class EditEndpointView(forms.ModalFormView):
@@ -70,7 +67,7 @@ class EditEndpointView(forms.ModalFormView):
     template_name = 'endpoints/edit_endpoint.html'
     submit_label = _("Edit Link")
     submit_url = "horizon:admin:hpe_storage:endpoints:edit_endpoint"
-    success_url = 'horizon:admin:hpe_storage:index'
+    success_url = reverse_lazy('horizon:admin:hpe_storage:index')
     page_title = _("Edit SSMC Link")
 
     def get_context_data(self, **kwargs):
@@ -78,20 +75,6 @@ class EditEndpointView(forms.ModalFormView):
         args = (self.kwargs['service_id'],)
         context['submit_url'] = reverse(self.submit_url, args=args)
         return context
-
-    def get_success_url(self):
-        return reverse(self.success_url)
-
-    @memoized.memoized_method
-    def get_object(self, *args, **kwargs):
-        qos_spec_id = self.kwargs['service_id']
-        try:
-            # self._object = api.cinder.qos_spec_get(self.request, qos_spec_id)
-            i = 0
-        except Exception as ex:
-            msg = _('Unable to retrieve QoS Spec details.')
-            exceptions.handle(self.request, msg)
-        return self._object
 
     def get_initial(self):
         service_id = self.kwargs['service_id']

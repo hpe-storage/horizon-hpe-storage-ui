@@ -1,3 +1,4 @@
+
 # (c) Copyright [2015] Hewlett Packard Enterprise Development LP
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +31,7 @@ from Queue import Queue, Empty
 LOG = logging.getLogger(__name__)
 import datetime
 import json
+import re
 
 import horizon_hpe_storage.api.keystone_api as keystone
 import horizon_hpe_storage.api.barbican_api as barbican
@@ -327,7 +329,7 @@ class RunTest(forms.SelfHandlingForm):
     def run_options_check_test(self, test_data):
         self.io_q = Queue()
         self.proc = Popen(['cinderdiags', '-v', 'options-check', '-f', 'json',
-                           '-conf-data', test_data],
+                           '-conf-data', test_data, '-incl-system-info'],
                           stdout=PIPE,
                           stderr=PIPE)
         Thread(target=self.stream_watcher, name='stdout-watcher',
@@ -339,8 +341,8 @@ class RunTest(forms.SelfHandlingForm):
         import time
         done = False
         while not done:
-            time.sleep(1)
-            if self.proc.stdout.closed:
+            time.sleep(2)
+            if self.proc.stdout.closed and self.proc.stderr.closed:
                 done = True
 
     def run_software_check_test(self, test_data):
@@ -358,8 +360,8 @@ class RunTest(forms.SelfHandlingForm):
         import time
         done = False
         while not done:
-            time.sleep(1)
-            if self.proc.stdout.closed:
+            time.sleep(2)
+            if self.proc.stdout.closed and self.proc.stderr.closed:
                 done = True
 
     def clean(self):
@@ -389,16 +391,28 @@ class RunTest(forms.SelfHandlingForm):
             if self.errors_occurred:
                 LOG.info(("%s") % self.error_text)
                 # use better error messages
+                error_categorized = False
                 error_text = 'Test could not be completed due to the following issue(s):'
                 if "invalid ssh" in self.error_text.lower():
                     error_text += ('<li>' + "Invalid SSH credentials" + '</li>')
+                    error_categorized = True
                 if "unable to connect" in self.error_text.lower():
                     error_text += ('<li>' + "Unable to connect to host: " +
                                    cinder_data['host_ip'] + '</li>')
+                    error_categorized = True
                 if "unable to copy" in self.error_text.lower():
                     error_text += ('<li>' + "Host Cinder config file path not found: " +
                                    '</li>' +
                                    '<li>' + cinder_data['conf_source'] + '</li>')
+                    error_categorized = True
+                if "failed to connect to hpe3par_api_url" in self.error_text.lower():
+                    error_text += ('<li>' + "Could not connect to backend: " +
+                                   self.error_text + '</li>')
+                    error_categorized = True
+
+                if not error_categorized:
+                    error_text += ('<li>' + self.error_text + '</li>')
+
                 # use HTML markup for better formatted text
                 status = mark_safe(error_text)
                 raise ValidationError(status)
@@ -421,16 +435,23 @@ class RunTest(forms.SelfHandlingForm):
             if self.errors_occurred:
                 LOG.info(("%s") % self.error_text)
                 # use better error messages
-                error_text = 'Test could not be completed due to the following issue(s):'
+                error_categorized = False
+                error_text = 'Software tests could not be completed due to the following issue(s):'
                 if "invalid ssh" in self.error_text.lower():
                     error_text += ('<li>' + "Invalid SSH credentials" + '</li>')
+                    error_categorized = True
                 if "unable to connect" in self.error_text.lower():
                     error_text += ('<li>' + "Unable to connect to host: " +
                                    nova_data['host_ip'] + '</li>')
+                    error_categorized = True
                 if "unable to copy" in self.error_text.lower():
                     error_text += ('<li>' + "Host Cinder config file path not found: " +
                                    '</li>' +
                                    '<li>' + nova_data['conf_source'] + '</li>')
+
+                if not error_categorized:
+                    error_text += ('<li>' + self.error_text + '</li>')
+
                 # use HTML markup for better formatted text
                 status = mark_safe(error_text)
                 raise ValidationError(status)
@@ -442,9 +463,12 @@ class RunTest(forms.SelfHandlingForm):
             config_status = ''
             software_status = ''
 
+            LOG.info("Process test results - start options results")
             if self.options_test_results:
                 json_string = self.options_test_results
+                LOG.info("options:json results - %s" % json_string)
                 parsed_json = json.loads(json_string)
+                LOG.info("options:parsed_json results - %s" % parsed_json)
                 for section in parsed_json:
                     config_status += \
                         "Backend Section:" + section['Backend Section'] + "::" + \
@@ -452,11 +476,16 @@ class RunTest(forms.SelfHandlingForm):
                         "credentials: " + section['Credentials'] + "::" + \
                         "driver:" + section['Driver'] + "::" + \
                         "wsapi:" + section['WS API'] + "::" + \
-                        "iscsi:" + section['iSCSI IP(s)'] + "::"
+                        "iscsi:" + section['iSCSI IP(s)'] + "::" + \
+                        "system_info:" + section['System Info'] + "::"
+                    LOG.info("options:config_status - %s" % config_status)
 
+            LOG.info("Process test results - start software results")
             if self.software_test_results:
                 json_string = self.software_test_results
+                LOG.info("software:json results - %s" % json_string)
                 parsed_json = json.loads(json_string)
+                LOG.info("software:parsed_json results - %s" % parsed_json)
                 for section in parsed_json:
                     software_pkg = "Software Test:package:"
                     if section['Node'].endswith("nova"):
@@ -467,6 +496,7 @@ class RunTest(forms.SelfHandlingForm):
                         software_pkg + "::" + \
                         "installed:" + section['Installed'] + "::" + \
                         "version:" + section['Version'] + "::"
+                    LOG.info("software:software_status - %s" % software_status)
 
             # update test data
             self.barbican_api.delete_diag_test(self.keystone_api.get_session_key(),
