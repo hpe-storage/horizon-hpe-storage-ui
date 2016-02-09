@@ -69,11 +69,13 @@ class PoolDetailView(tabs.TabView):
                     # if hasattr(pool, 'free_capacity_gb'):
                     #     pool_data['free_capacity_gb'] = pool.free_capacity_gb
                     break
+            if not pool_data:
+                raise Exception("No pool data for cinder host: " + pool_name)
 
         except Exception:
             redirect = self.get_redirect_url()
             exceptions.handle(self.request,
-                              _('Unable to retrieve storage pool data.'),
+                              _('Unable to retrieve storage pool data'),
                               redirect=redirect)
         return pool_data
 

@@ -144,28 +144,36 @@ class BackendsTab(tabs.TableTab):
         return disp_results
 
     def trim_backend_list(self, cur_backend_list):
-        new_backend_list = []
-        # we only want to show each system once, but we need to combine all the cpgs
+        # modify our list to include list of cinder hosts
+        temp_backend_list = []
         for cur_backend in cur_backend_list:
+            cinder_hosts = []
+            cur_cpgs = cur_backend['cpgs'].split(',')
+            for cpg in cur_cpgs:
+                cinder_host = cur_backend['backend'] + "#" + cpg
+                cinder_hosts.append(cinder_host)
+            cur_backend['cinder_hosts'] = cinder_hosts
+            temp_backend_list.append(cur_backend)
+
+        new_backend_list = []
+        # we only want to show each system once, but we need to combine all the
+        # cinder hosts (host@backen#cpg) for the system
+        for cur_backend in temp_backend_list:
             is_dup = False
             for new_backend in new_backend_list:
                 if cur_backend['serial_number'] == new_backend['serial_number']:
-                    # this is a duplicate
+                    # this system already exists in out list
                     is_dup = True
-                    cur_cpgs = cur_backend['cpgs'].split(',')
-                    new_cpgs = new_backend['cpgs'].split(',')
-                    for cur_cpg in cur_cpgs:
-                        add_cpg = True
-                        for new_cpg in new_cpgs:
-                            # if cpg doesn't already exist for system, add it
-                            if cur_cpg == new_cpg:
+                    for cur_cinder_host in cur_backend['cinder_hosts']:
+                        add_cinder_host = True
+                        for new_cinder_host in new_backend['cinder_hosts']:
+                            if cur_cinder_host == new_cinder_host:
                                 # already exists
-                                add_cpg = False
+                                add_cinder_host = False
                                 break
-                        if add_cpg:
-                            # update the cpgs for the new list
-                            temp_list = new_backend['cpgs']
-                            new_backend['cpgs'] = temp_list + "," + cur_cpg
+                        if add_cinder_host:
+                            # update the cinder hosts for the new list
+                            new_backend['cinder_hosts'].append(cur_cinder_host)
 
             if not is_dup:
                 new_backend_list.append(cur_backend)

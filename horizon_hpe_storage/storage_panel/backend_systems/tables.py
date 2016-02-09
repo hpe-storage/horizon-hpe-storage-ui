@@ -51,12 +51,10 @@ class PoolsColumn(tables.Column):
     # Customized column class.
     def get_raw_data(self, backend_system):
         link = _('%(pool_name)s')
-        pool_name_start = backend_system['host_name'] + "@" + \
-            backend_system['backend'] + "#"
+        pool_name_start = backend_system['host_name'] + "@"
         pools = []
-        cpgs = backend_system['cpgs'].split(",")
-        for cpg in cpgs:
-            pool_name = get_pool_name(pool_name_start + cpg)
+        for cinder_host in backend_system['cinder_hosts']:
+            pool_name = get_pool_name(pool_name_start + cinder_host)
             vals = {"pool_name": pool_name}
             pools.append(link % vals)
 
