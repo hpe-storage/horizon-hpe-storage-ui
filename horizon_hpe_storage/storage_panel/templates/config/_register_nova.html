@@ -1,0 +1,12 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Register a Nova node so that it can be validated to have the proper
+      software packages installed.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+

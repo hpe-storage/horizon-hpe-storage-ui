@@ -1,0 +1,15 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Create a link between a Cinder Backend and an HPE 3PAR SSMC Instance.
+      <br>
+      <br>
+      Note that the HPE 3PAR SSMC Username and Password will be used to set the access-level to
+      SSMC once it is launched.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+

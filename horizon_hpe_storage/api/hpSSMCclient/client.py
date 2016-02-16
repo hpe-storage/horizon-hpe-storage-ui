@@ -12,27 +12,14 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-try:
-    # For Python 3.0 and later
-    from urllib.parse import quote
-except ImportError:
-    # Fall back to Python 2's urllib2
-    from urllib2 import quote
-
-import exceptions
 import http
 
 
 class HPSSMCClient(object):
 
-    """ The 3PAR REST API Client.
-
-    :param api_url: The url to the WSAPI service on 3PAR
-                    ie. http://<3par server>:8080/api/v1
-    :type api_url: str
+    """ Client layer to access HTTP calls to SSMC service.
 
     """
-
 
     def __init__(self, api_url):
         self.api_url = api_url

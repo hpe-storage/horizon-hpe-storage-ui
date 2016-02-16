@@ -1,0 +1,9 @@
+{% block main %}
+  <div id="cinder-nodes">
+      {{ diag_cinder_nodes_table.render }}
+  </div>
+
+  <div id="nova-nodes">
+      {{ diag_nova_nodes_table.render }}
+  </div>
+{% endblock %}

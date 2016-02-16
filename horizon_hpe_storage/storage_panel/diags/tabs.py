@@ -18,15 +18,33 @@ from horizon import tabs
 
 
 class OverviewTab(tabs.Tab):
-    name = _("Test Results")
+    name = _("Diagnostic Test Results")
     slug = "overview"
-    template_name = ("diags/_detail_overview.html")
+    template_name = ("diags/_detail_test_overview.html")
 
     def get_context_data(self, request):
         return {"test": self.tab_group.kwargs['test']}
 
 
-class SystemInfoTab(tabs.Tab):
+class ConfigItemsTab(tabs.Tab):
+    name = _("Driver Configuration Entries")
+    slug = "config_entries"
+    template_name = ("diags/_config_items.html")
+
+    def get_context_data(self, request):
+        return {"test": self.tab_group.kwargs['test']}
+
+
+class RawTestDumpTab(tabs.Tab):
+    name = _("Raw Test Results Data")
+    slug = "raw_test"
+    template_name = ("diags/_raw_test.html")
+
+    def get_context_data(self, request):
+        return {"test": self.tab_group.kwargs['test']}
+
+
+class TEMPSystemInfoTab(tabs.Tab):
     name = _("Storage System Information")
     slug = "systems"
     template_name = ("diags/_system_overview.html")
@@ -40,4 +58,26 @@ class TestDetailTabs(tabs.TabGroup):
     # tabs = (OverviewTab, SystemInfoTab)
     # only show test results. System info has its own panel.
     # but keep around as example of having tabbed detail panel
-    tabs = (OverviewTab,)
+    tabs = (OverviewTab, ConfigItemsTab, RawTestDumpTab)
+
+
+class SWTestDetailTabs(tabs.TabGroup):
+    slug = "software_test_details"
+    tabs = (OverviewTab, )
+
+
+class BackendOverviewTab(tabs.Tab):
+    name = _("Backend")
+    slug = "backend"
+    template_name = ("diags/_backend_details.html")
+
+    def get_context_data(self, request):
+        return {"backend_data": self.tab_group.kwargs['backend_data']}
+
+
+class BackendDetailTabs(tabs.TabGroup):
+    slug = "backend_details"
+    # tabs = (OverviewTab, SystemInfoTab)
+    # only show test results. System info has its own panel.
+    # but keep around as example of having tabbed detail panel
+    tabs = (BackendOverviewTab,)

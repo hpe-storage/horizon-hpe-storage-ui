@@ -26,20 +26,12 @@ LOG = logging.getLogger(__name__)
 
 class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
     """
-    An HTTP REST Client that sends and recieves JSON data as the body of the
-    HTTP request.
-
-    :param api_url: The url to the WSAPI service on 3PAR
-                    ie. http://<3par server>:8080
-    :type api_url: str
-    :param insecure: Use https? requires a local certificate
-    :type insecure: bool
-
+    HTTP/REST client to access SSMC backend service
     """
 
     def authenticateSSMC(self, user, password, token, optional=None):
         """
-        This tries to create an authenticated session with the 3PAR server
+        This tries to create an authenticated session with the HPE3PAR SSMC service
 
         :param user: The username
         :type user: str

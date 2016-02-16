@@ -14,282 +14,353 @@
 #    limitations under the License.
 
 from django.core.urlresolvers import reverse
-from django.forms import ValidationError  # noqa
-from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from horizon import exceptions
 from horizon import forms
 from horizon import messages
-from horizon.utils import validators
 
 import logging
-from subprocess import Popen, PIPE
-from threading import Thread
-from Queue import Queue, Empty
 
 LOG = logging.getLogger(__name__)
 import datetime
 import json
-import re
 
 import horizon_hpe_storage.api.keystone_api as keystone
 import horizon_hpe_storage.api.barbican_api as barbican
+import horizon_hpe_storage.test_engine.node_test as tester
 
-SERVICE_TYPES = (
-    ("cinder", _("Cinder")),
-    ("nova", _("Nova")),
-    ("both", _("Cinder and Nova")),
-)
+from openstack_dashboard.api import cinder
 
 
-class CreateTest(forms.SelfHandlingForm):
-    test_name = forms.CharField(
-        max_length=255,
-        label=_("Test Name"))
-    service_type = forms.ChoiceField(
-        label=_("Service Type"),
-        help_text=_("The service type to test on the host."),
-        widget=forms.Select(
-            attrs={'class': 'switchable', 'data-slug': 'source'}))
-    host_ip = forms.IPField(
-        label=_("Host IP"),
-        help_text=_("Address of system hosting the Cinder or Nova service."))
-    ssh_name = forms.CharField(
-        max_length=255,
-        label=_("SSH Username"),
-        help_text=_("Username for SSH access to Cinder or Nova service host."))
-    ssh_pwd = forms.RegexField(
-        label=_("SSH Password"),
-        widget=forms.PasswordInput(render_value=False),
-        help_text=_("Password for SSH access to Cinder or Nova service host."),
-        regex=validators.password_validator(),
-        error_messages={'invalid': validators.password_validator_msg()})
-    confirm_password = forms.CharField(
-        label=_("Confirm Password"),
-        widget=forms.PasswordInput(render_value=False))
-    config_path = forms.CharField(
-        label=_("Cinder config file path"),
-        help_text=_("Path to cinder.conf file on Cinder service host."),
+def run_cinder_node_test(node, barbican_api):
+    credentials_data = {}
+    all_data = []
+
+    # note 'section' must be lower case for diag tool
+    credentials_data['section'] = node['node_name'].lower() + '-' + \
+                                  barbican_api.CINDER_NODE_TYPE
+    credentials_data['service'] = barbican_api.CINDER_NODE_TYPE
+    credentials_data['host_ip'] = node['node_ip']
+    credentials_data['ssh_user'] = node['ssh_name']
+    credentials_data['ssh_password'] = node['ssh_pwd']
+    credentials_data['conf_source'] = node['config_path']
+
+    all_data.append(credentials_data)
+    json_test_data = json.dumps(all_data)
+
+    # run ssh validation check on cinder node
+    node_test = tester.NodeTest()
+    node_test.run_credentials_check_test(json_test_data)
+
+    cur_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if "fail" in node_test.test_result_text:
+        error_text = 'SSH credential validation failed'
+        LOG.info(("%s") % node_test.error_text)
+
+        # update test data
+        barbican_api.delete_node(
+            node['node_name'],
+            barbican_api.CINDER_NODE_TYPE)
+
+        result = "Failed"
+        barbican_api.add_node(
+            node['node_name'],
+            barbican_api.CINDER_NODE_TYPE,
+            node['node_ip'],
+            node['ssh_name'],
+            node['ssh_pwd'],
+            config_path=node['config_path'],
+            diag_run_time=cur_time,
+            ssh_validation_time= "Failed")
+
+        # no need to continue
+        return
+
+    # run diag test on cinder node
+    node_test.run_options_check_test(json_test_data)
+
+    config_status = ''
+    LOG.info("Process test results - start options results")
+    if node_test.test_result_text:
+        json_string = node_test.test_result_text
+        LOG.info("options:json results - %s" % json_string)
+        parsed_json = json.loads(json_string)
+        LOG.info("options:parsed_json results - %s" % parsed_json)
+        for section in parsed_json:
+            config_status += \
+                "Backend Section:" + section['Backend Section'] + "::" + \
+                "cpg:" + section['CPG'] + "::" + \
+                "credentials: " + section['Credentials'] + "::" + \
+                "driver:" + section['Driver'] + "::" + \
+                "wsapi:" + section['WS API'] + "::" + \
+                "iscsi:" + section['iSCSI IP(s)'] + "::" + \
+                "system_info:" + section['System Info'] + "::" + \
+                "config_items:" + section['Conf Items'] + "::"
+            LOG.info("options:config_status - %s" % config_status)
+
+    # run software test on cinder node
+    node_test.run_software_check_test(json_test_data)
+
+    software_status = ''
+    LOG.info("Process test results - start software results")
+    if node_test.test_result_text:
+        json_string = node_test.test_result_text
+        LOG.info("software:json results - %s" % json_string)
+        parsed_json = json.loads(json_string)
+        LOG.info("software:parsed_json results - %s" % parsed_json)
+        for section in parsed_json:
+            software_pkg = "Software Test:package:"
+            software_pkg += section['Software']
+            software_status += \
+                software_pkg + "::" + \
+                "installed:" + section['Installed'] + "::" + \
+                "version:" + section['Version'] + "::"
+            LOG.info("software:software_status - %s" % software_status)
+
+    # update test data
+    barbican_api.delete_node(
+        node['node_name'],
+        barbican_api.CINDER_NODE_TYPE)
+
+    barbican_api.add_node(
+        node['node_name'],
+        barbican_api.CINDER_NODE_TYPE,
+        node['node_ip'],
+        node['ssh_name'],
+        node['ssh_pwd'],
+        config_path=node['config_path'],
+        diag_status=config_status,
+        software_status=software_status,
+        diag_run_time=cur_time,
+        ssh_validation_time= cur_time)
+
+def run_software_test(node, barbican_api):
+    credentials_data = {}
+    all_data = []
+
+    # note 'section' must be lower case for diag tool
+    credentials_data['section'] = node['node_name'].lower() + '-' + \
+                                  barbican_api.NOVA_NODE_TYPE
+    credentials_data['service'] = barbican_api.NOVA_NODE_TYPE
+    credentials_data['host_ip'] = node['node_ip']
+    credentials_data['ssh_user'] = node['ssh_name']
+    credentials_data['ssh_password'] = node['ssh_pwd']
+
+    all_data.append(credentials_data)
+    json_test_data = json.dumps(all_data)
+
+    # run ssh validation check on cinder node
+    node_test = tester.NodeTest()
+    node_test.run_credentials_check_test(json_test_data)
+
+    cur_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if "fail" in node_test.test_result_text:
+        error_text = 'SSH credential validation failed'
+        LOG.info(("%s") % node_test.error_text)
+
+        # update test data
+        barbican_api.delete_node(
+            node['node_name'],
+            barbican_api.NOVA_NODE_TYPE)
+
+        result = "Failed"
+        barbican_api.add_node(
+            node['node_name'],
+            barbican_api.NOVA_NODE_TYPE,
+            node['node_ip'],
+            node['ssh_name'],
+            node['ssh_pwd'],
+            diag_run_time=cur_time,
+            ssh_validation_time= "Failed")
+
+        # no need to continue
+        return
+
+    # run software test on cinder node
+    node_test.run_software_check_test(json_test_data)
+
+    software_status = ''
+    LOG.info("Process test results - start software results")
+    if node_test.test_result_text:
+        json_string = node_test.test_result_text
+        LOG.info("software:json results - %s" % json_string)
+        parsed_json = json.loads(json_string)
+        LOG.info("software:parsed_json results - %s" % parsed_json)
+        for section in parsed_json:
+            software_pkg = "Software Test:package:"
+            software_pkg += section['Software']
+            software_status += \
+                software_pkg + "::" + \
+                "installed:" + section['Installed'] + "::" + \
+                "version:" + section['Version'] + "::"
+            LOG.info("software:software_status - %s" % software_status)
+
+    # update test data
+    barbican_api.delete_node(
+        node['node_name'],
+        barbican_api.NOVA_NODE_TYPE)
+
+    barbican_api.add_node(
+        node['node_name'],
+        barbican_api.NOVA_NODE_TYPE,
+        node['node_ip'],
+        node['ssh_name'],
+        node['ssh_pwd'],
+        software_status=software_status,
+        diag_run_time=cur_time,
+        ssh_validation_time= cur_time)
+
+
+class DumpCinder(forms.SelfHandlingForm):
+    stats = forms.CharField(
+        # max_length=10000,
+        label=_("Results"),
         required=False,
-        widget=forms.widgets.TextInput(
-            attrs={'class': 'switched', 'data-switch-on': 'source',
-                   'data-source-both': _('Cinder config file path'),
-                   'data-source-cinder': _('Cinder config file path'),
-                   }))
+        widget=forms.Textarea(
+            attrs={'rows': 10, 'readonly': 'readonly'}))
 
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
 
     def __init__(self, request, *args, **kwargs):
-        super(forms.SelfHandlingForm, self).__init__(request, *args, **kwargs)
+        super(DumpCinder, self).__init__(request, *args, **kwargs)
 
-        self.fields['service_type'].choices = SERVICE_TYPES
+        stats_field = self.fields['stats']
 
-    def clean(self):
-        # Check to make sure password fields match
-        data = super(forms.Form, self).clean()
-        if 'ssh_pwd' in data and 'confirm_password' in data:
-            if data['ssh_pwd'] != data['confirm_password']:
-                raise ValidationError(_('Passwords do not match.'))
-
-        if data['service_type'] == "nova":
-            data['config_path'] = "N/A"
-        elif 'config_path' not in data:
-            msg = _('This field is required')
-            self._errors['config_path'] = self.error_class([msg])
-
-        return data
-
-    def handle(self, request, data):
+        node_name = self.initial['node_name']
         try:
-            # get keystone session key for barbican
-            keystone_api = keystone.KeystoneAPI()
-            keystone_api.do_setup(self.request)
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            node = self.barbican_api.get_node(
+                node_name,
+                self.barbican_api.CINDER_NODE_TYPE)
 
-            # store credentials for endpoint using barbican
-            barbican_api = barbican.BarbicanAPI()
-            barbican_api.do_setup(None)
-            barbican_api.add_diag_test(keystone_api.get_session_key(),
-                                       data['test_name'],
-                                       data['service_type'],
-                                       data['host_ip'],
-                                       data['ssh_name'],
-                                       data['ssh_pwd'],
-                                       data['config_path'])
+            stats = "node name: " + node['node_name'] + "\n"
+            stats += "node type: " + node['node_type'] + "\n"
+            stats += "ip: " + node['node_ip'] + "\n"
+            stats += "SSH uname: " + node['ssh_name'] + "\n"
+            stats += "SSH pwd: " + ('*' * len(node['ssh_pwd'])) + "\n"
+            stats += "config path: " + node['config_path'] + "\n"
+            stats += "run time: " + node['validation_time'] + "\n"
 
-            messages.success(request, _('Successfully created diagnostic '
-                                        'test: %s') % data['test_name'])
-            return True
+            diag_test = node['diag_test_status']
+            backends = diag_test.split("Backend Section:")
+            for backend in backends:
+                if backend:
+                    stats += "\r\n"
+                    raw_results = backend.split("::")
+                    stats += "Driver Configuration Section [" + \
+                             raw_results[0] + "]:\n"
+                    test_results = ""
+                    for raw_result in raw_results:
+                        if raw_result.startswith('system_info'):
+                            system_info = self.get_backend_system_info(
+                                raw_result[12:])
+                        elif raw_result.startswith('config_items'):
+                            config_items = ""
+                            item_str = raw_result[len('config_items:'):]
+                            items = item_str.split(";;")
+                            for item in items:
+                                if "==" in item:
+                                    key, value = item.split("==")
+                                    if "password" in key:
+                                        value = '*' * len(value)
+                                    config_items += \
+                                        ("\t\t" + key + ": " + value + "\n")
+                        else:
+                            if ":" in raw_result:
+                                key, value = raw_result.split(":")
+                                test_results += \
+                                    ("\t\t" + key + ": " + value + "\n")
+
+                    stats += "\n\tConfig Items ('cinder.conf'):\n" + config_items
+                    stats += "\n\tTest Results for 'cinder.conf':\n" + test_results
+                    stats += "\n\tSystem Information:\n" + system_info
+
+            software_status = node['software_test_status']
+            node_groups = []
+            nodes = software_status.split("Software Test:")
+            stats += "\nSoftware Test Results:\n"
+            for node in nodes:
+                if node:
+                    raw_results = node.split("::")
+                    for raw_result in raw_results:
+                        if ":" in raw_result:
+                            key, value = raw_result.split(":")
+                            stats += ("\t" + key + ": " + value + "\n")
+
+            stats_field.initial = stats
+
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
             exceptions.handle(request,
-                              _('Unable to create diagnostic test.'),
+                              _('Unable to access diagnostic test.'),
                               redirect=redirect)
 
+    def get_backend_system_info(self, data):
+        # pull all of the data out
+        disp_results = ""
+        items = data.split(";;")
+        license_str = "\t\tlicenses:\n\t\t\t"
+        for item in items:
+            key, value = item.split(":")
+            if key == "licenses":
+                licenses = value.split(";")
+                license_str += ('\n\t\t\t'.join(licenses) + "\n")
+            else:
+                if key == "host_name":
+                    host_name = value
+                elif key == "cpgs":
+                    cpgs = value
+                elif key == "backend":
+                    backend = value
+                disp_results += ("\t\t" + key + ": " + value + "\n")
 
-class EditTest(forms.SelfHandlingForm):
-    test_name = forms.CharField(
-        max_length=255,
-        label=_("Test Name"),
-        required=False,
-        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
-    service_type = forms.ChoiceField(
-        label=_("Service Type"),
-        help_text=_("The service type to test on the host."),
-        widget=forms.Select(
-            attrs={'class': 'switchable', 'data-slug': 'source'}))
-    host_ip = forms.IPField(
-        label=_("Host IP"),
-        help_text=_("Address of system hosting the Cinder or Nova service."))
-    ssh_name = forms.CharField(
-        max_length=255,
-        label=_("SSH Username"),
-        help_text=_("Username for SSH access to Cinder or Nova service host."))
-    ssh_pwd = forms.RegexField(
-        label=_("SSH Password"),
-        widget=forms.PasswordInput(render_value=False),
-        help_text=_("Password for SSH access to Cinder or Nova service host."),
-        regex=validators.password_validator(),
-        error_messages={'invalid': validators.password_validator_msg()})
-    confirm_password = forms.CharField(
-        label=_("Confirm Password"),
-        required=False,
-        widget=forms.PasswordInput(render_value=False))
-    config_path = forms.CharField(
-        label=_("Cinder config file path"),
-        help_text=_("Path to cinder.conf file on Cinder service host."),
-        required=False,
-        widget=forms.widgets.TextInput(
-            attrs={'class': 'switched', 'data-switch-on': 'source',
-                   'data-source-both': _('Cinder config file path'),
-                   'data-source-cinder': _('Cinder config file path'),
-                   }))
+        # get pool info
+        if host_name and cpgs:
+            pool_name_start = host_name + '@' + backend + '#'
+            pool_info = ""
+            cur_cpgs = cpgs.split(',')
+            pools = cinder.pool_list(self.request, detailed=True)
+            for cpg in cur_cpgs:
+                pool_name = pool_name_start + cpg
+                for pool in pools:
+                    if pool.name == pool_name:
+                        pool_info += "\n\t\tScheduler Data for Pool: " + \
+                                     pool_name + "\n"
+                        pool_data = pool._apiresource._info['capabilities']
+                        for key, value in pool_data.iteritems():
+                            pool_info += ("\t\t\t" + key + ": " +
+                                          str(value) + "\n")
 
-    keystone_api = None
-    barbican_api = None
-
-    def __init__(self, request, *args, **kwargs):
-        super(EditTest, self).__init__(request, *args, **kwargs)
-        test_name = self.initial['test_name']
-        self.fields['service_type'].choices = SERVICE_TYPES
-
-        try:
-            test_name_field = self.fields['test_name']
-            host_ip_field = self.fields['host_ip']
-            ssh_name_field = self.fields['ssh_name']
-            ssh_pwd_field = self.fields['ssh_pwd']
-            config_path_field = self.fields['config_path']
-
-            self.keystone_api = keystone.KeystoneAPI()
-            self.keystone_api.do_setup(self.request)
-            self.barbican_api = barbican.BarbicanAPI()
-            self.barbican_api.do_setup(None)
-
-            test = self.barbican_api.get_diag_test(
-                self.keystone_api.get_session_key(),
-                'cinderdiags-' + test_name)
-
-            test_name_field.initial = test['test_name']
-
-            current_service_type = test['service_type']
-            self.initial['service_type'] = current_service_type
-
-            host_ip_field.initial = test['host_ip']
-            ssh_name_field.initial = test['ssh_name']
-            ssh_pwd_field.initial = test['ssh_pwd']
-            ssh_pwd_field.widget.render_value = True  # this makes it show up initially
-
-            config_path_field.initial = test['config_path']
-
-        except Exception as ex:
-            msg = _('Unable to retrieve Diagnostic Test details.')
-            exceptions.handle(self.request, msg)
-
-    def clean(self):
-        form_data = self.cleaned_data
-
-        # ensure that data has changed
-        service_type_field = self.fields['service_type']
-        host_ip_field = self.fields['host_ip']
-        ssh_name_field = self.fields['ssh_name']
-        ssh_pwd_field = self.fields['ssh_pwd']
-        config_path_field = self.fields['config_path']
-
-        if form_data['service_type'] == service_type_field.initial:
-            if form_data['host_ip'] == host_ip_field.initial:
-                if form_data['ssh_name'] == ssh_name_field.initial:
-                    if form_data['ssh_pwd'] == ssh_pwd_field.initial:
-                        if form_data['config_path'] == config_path_field.initial:
-                            raise forms.ValidationError(
-                                _('No fields have been modified.'))
-
-        # Check to make sure password fields match.
-        if form_data['ssh_pwd'] != ssh_pwd_field.initial:
-            if form_data['ssh_pwd'] != form_data['confirm_password']:
-                raise ValidationError(_('Passwords do not match.'))
-
-        if form_data['service_type'] == "nova":
-            form_data['config_path'] = "N/A"
-        elif 'config_path' not in form_data:
-            msg = _('This field is required')
-            self._errors['config_path'] = self.error_class([msg])
-
-        return form_data
+        return disp_results + license_str + pool_info
 
     def handle(self, request, data):
-        try:
-            # no barbican api for update, so delete and add
-            self.barbican_api.delete_diag_test(self.keystone_api.get_session_key(),
-                                               self.fields['test_name'].initial)
-
-            self.barbican_api.add_diag_test(self.keystone_api.get_session_key(),
-                                            data['test_name'],
-                                            data['service_type'],
-                                            data['host_ip'],
-                                            data['ssh_name'],
-                                            data['ssh_pwd'],
-                                            data['config_path'])
-
-            messages.success(request, _('Successfully updated Diagnostic Test'))
-            return True
-        except Exception:
-            redirect = reverse("horizon:admin:hpe_storage:index")
-            exceptions.handle(request,
-                              _('Unable to update diagnostic test'),
-                              redirect=redirect)
+        return True
 
 
-class RunTest(forms.SelfHandlingForm):
-    test_name = forms.CharField(
+class TestCinder(forms.SelfHandlingForm):
+    node_name = forms.CharField(
         max_length=255,
-        label=_("Test Name"),
+        label=_("Cinder Node"),
         required=False,
         widget=forms.TextInput(
         attrs={'readonly': 'readonly'}))
 
-    keystone_api = None
-    barbican_api = None
-    test = None
-    io_q = None
-    proc = None
-    errors_occurred = False
-    error_text = ''
-    test_result_text = ''
-    options_test_results = None
-    software_test_results = None
-    stream_open = True
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
+    node = None
 
     def __init__(self, request, *args, **kwargs):
-        super(RunTest, self).__init__(request, *args, **kwargs)
-        test_name = self.initial['test_name']
+        super(TestCinder, self).__init__(request, *args, **kwargs)
+        node_name = self.initial['node_name']
         try:
-            self.keystone_api = keystone.KeystoneAPI()
-            self.keystone_api.do_setup(self.request)
-            self.barbican_api = barbican.BarbicanAPI()
-            self.barbican_api.do_setup(None)
-
-            self.test = self.barbican_api.get_diag_test(
-                self.keystone_api.get_session_key(),
-                'cinderdiags-' + test_name)
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            self.node = self.barbican_api.get_node(
+                node_name,
+                self.barbican_api.CINDER_NODE_TYPE)
 
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -297,224 +368,11 @@ class RunTest(forms.SelfHandlingForm):
                               _('Unable to run diagnostic test.'),
                               redirect=redirect)
 
-    def stream_watcher(self, identifier, stream):
-        for line in stream:
-            # block for 1 sec
-            self.io_q.put((identifier, line))
-
-        if not stream.closed:
-            self.stream_open = False
-            stream.close()
-
-    def printer(self):
-        while True:
-            try:
-                item = self.io_q.get(True, 1)
-            except Empty:
-                # no output in either stream for 1 sec so check if we are done
-                if self.proc.poll() is not None:
-                    break
-            else:
-                identifier, line = item
-                if identifier is 'STDERR':
-                    test_line = line.lower()
-                    if 'failed' in test_line or 'error' in test_line:
-                        self.errors_occurred = True
-                        self.error_text += line
-                else:
-                    self.test_result_text += line
-
-                LOG.info(("%s:%s") % (identifier, line))
-
-    def run_options_check_test(self, test_data):
-        self.io_q = Queue()
-        self.proc = Popen(['cinderdiags', '-v', 'options-check', '-f', 'json',
-                           '-conf-data', test_data, '-incl-system-info'],
-                          stdout=PIPE,
-                          stderr=PIPE)
-        Thread(target=self.stream_watcher, name='stdout-watcher',
-               args=('STDOUT', self.proc.stdout)).start()
-        Thread(target=self.stream_watcher, name='stderr-watcher',
-               args=('STDERR', self.proc.stderr)).start()
-        Thread(target=self.printer, name='printer').start()
-
-        import time
-        done = False
-        while not done:
-            time.sleep(2)
-            if self.proc.stdout.closed and self.proc.stderr.closed:
-                done = True
-
-    def run_software_check_test(self, test_data):
-        self.io_q = Queue()
-        self.proc = Popen(['cinderdiags', '-v', 'software-check', '-f', 'json',
-                           '-conf-data', test_data],
-                          stdout=PIPE,
-                          stderr=PIPE)
-        Thread(target=self.stream_watcher, name='stdout-watcher',
-               args=('STDOUT', self.proc.stdout)).start()
-        Thread(target=self.stream_watcher, name='stderr-watcher',
-               args=('STDERR', self.proc.stderr)).start()
-        Thread(target=self.printer, name='printer').start()
-
-        import time
-        done = False
-        while not done:
-            time.sleep(2)
-            if self.proc.stdout.closed and self.proc.stderr.closed:
-                done = True
-
-    def clean(self):
-        # validate test params needed to run test
-        data = super(forms.Form, self).clean()
-
-        cinder_data = {}
-        nova_data = {}
-        all_data = []
-
-        test_type = self.test['service_type']
-        if test_type == 'cinder' or test_type == 'both':
-            cinder_data['section'] = self.test['test_name'] + '-cinder'
-            cinder_data['service'] = 'cinder'
-            cinder_data['host_ip'] = self.test['host_ip']
-            cinder_data['ssh_user'] = self.test['ssh_name']
-            cinder_data['ssh_password'] = self.test['ssh_pwd']
-            cinder_data['conf_source'] = self.test['config_path']
-
-            all_data.append(cinder_data)
-            json_test_data = json.dumps(all_data)
-
-            # run options-check for cinder node test
-            self.run_options_check_test(json_test_data)
-            self.options_test_results = self.test_result_text
-
-            if self.errors_occurred:
-                LOG.info(("%s") % self.error_text)
-                # use better error messages
-                error_categorized = False
-                error_text = 'Test could not be completed due to the following issue(s):'
-                if "invalid ssh" in self.error_text.lower():
-                    error_text += ('<li>' + "Invalid SSH credentials" + '</li>')
-                    error_categorized = True
-                if "unable to connect" in self.error_text.lower():
-                    error_text += ('<li>' + "Unable to connect to host: " +
-                                   cinder_data['host_ip'] + '</li>')
-                    error_categorized = True
-                if "unable to copy" in self.error_text.lower():
-                    error_text += ('<li>' + "Host Cinder config file path not found: " +
-                                   '</li>' +
-                                   '<li>' + cinder_data['conf_source'] + '</li>')
-                    error_categorized = True
-                if "failed to connect to hpe3par_api_url" in self.error_text.lower():
-                    error_text += ('<li>' + "Could not connect to backend: " +
-                                   self.error_text + '</li>')
-                    error_categorized = True
-
-                if not error_categorized:
-                    error_text += ('<li>' + self.error_text + '</li>')
-
-                # use HTML markup for better formatted text
-                status = mark_safe(error_text)
-                raise ValidationError(status)
-
-        if test_type == 'nova' or test_type == 'both':
-            nova_data['section'] = self.test['test_name'] + '-nova'
-            nova_data['service'] = 'nova'
-            nova_data['host_ip'] = self.test['host_ip']
-            nova_data['ssh_user'] = self.test['ssh_name']
-            nova_data['ssh_password'] = self.test['ssh_pwd']
-
-            all_data.append(nova_data)
-
-            json_test_data = json.dumps(all_data)
-
-            self.test_result_text = ''
-            self.run_software_check_test(json_test_data)
-            self.software_test_results = self.test_result_text
-
-            if self.errors_occurred:
-                LOG.info(("%s") % self.error_text)
-                # use better error messages
-                error_categorized = False
-                error_text = 'Software tests could not be completed due to the following issue(s):'
-                if "invalid ssh" in self.error_text.lower():
-                    error_text += ('<li>' + "Invalid SSH credentials" + '</li>')
-                    error_categorized = True
-                if "unable to connect" in self.error_text.lower():
-                    error_text += ('<li>' + "Unable to connect to host: " +
-                                   nova_data['host_ip'] + '</li>')
-                    error_categorized = True
-                if "unable to copy" in self.error_text.lower():
-                    error_text += ('<li>' + "Host Cinder config file path not found: " +
-                                   '</li>' +
-                                   '<li>' + nova_data['conf_source'] + '</li>')
-
-                if not error_categorized:
-                    error_text += ('<li>' + self.error_text + '</li>')
-
-                # use HTML markup for better formatted text
-                status = mark_safe(error_text)
-                raise ValidationError(status)
-
-        return data
-
     def handle(self, request, data):
         try:
-            config_status = ''
-            software_status = ''
-
-            LOG.info("Process test results - start options results")
-            if self.options_test_results:
-                json_string = self.options_test_results
-                LOG.info("options:json results - %s" % json_string)
-                parsed_json = json.loads(json_string)
-                LOG.info("options:parsed_json results - %s" % parsed_json)
-                for section in parsed_json:
-                    config_status += \
-                        "Backend Section:" + section['Backend Section'] + "::" + \
-                        "cpg:" + section['CPG'] + "::" + \
-                        "credentials: " + section['Credentials'] + "::" + \
-                        "driver:" + section['Driver'] + "::" + \
-                        "wsapi:" + section['WS API'] + "::" + \
-                        "iscsi:" + section['iSCSI IP(s)'] + "::" + \
-                        "system_info:" + section['System Info'] + "::"
-                    LOG.info("options:config_status - %s" % config_status)
-
-            LOG.info("Process test results - start software results")
-            if self.software_test_results:
-                json_string = self.software_test_results
-                LOG.info("software:json results - %s" % json_string)
-                parsed_json = json.loads(json_string)
-                LOG.info("software:parsed_json results - %s" % parsed_json)
-                for section in parsed_json:
-                    software_pkg = "Software Test:package:"
-                    if section['Node'].endswith("nova"):
-                        software_pkg += "[Nova] " + section['Software']
-                    else:
-                        software_pkg += "[Cinder] " + section['Software']
-                    software_status += \
-                        software_pkg + "::" + \
-                        "installed:" + section['Installed'] + "::" + \
-                        "version:" + section['Version'] + "::"
-                    LOG.info("software:software_status - %s" % software_status)
-
-            # update test data
-            self.barbican_api.delete_diag_test(self.keystone_api.get_session_key(),
-                                               self.test['test_name'])
-
-            import oslo_utils
-            time = oslo_utils.timeutils.utcnow()
-            self.barbican_api.add_diag_test(self.keystone_api.get_session_key(),
-                                            self.test['test_name'],
-                                            self.test['service_type'],
-                                            self.test['host_ip'],
-                                            self.test['ssh_name'],
-                                            self.test['ssh_pwd'],
-                                            self.test['config_path'],
-                                            config_status,
-                                            software_status,
-                                            datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            run_cinder_node_test(self.node, self.barbican_api)
             messages.success(request, _('Successfully ran diagnostic test'))
             return True
         except Exception as ex:
@@ -523,3 +381,148 @@ class RunTest(forms.SelfHandlingForm):
                               _('Unable to run diagnostic test: ') + ex.message,
                               redirect=redirect)
 
+
+class TestAllCinder(forms.SelfHandlingForm):
+    node_names = forms.CharField(
+        max_length=500,
+        label=_("Cinder Nodes"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={'rows': 6, 'readonly': 'readonly'}))
+
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
+    nodes = None
+
+    def __init__(self, request, *args, **kwargs):
+        super(forms.SelfHandlingForm, self).__init__(request, *args, **kwargs)
+        try:
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            self.nodes = self.barbican_api.get_all_nodes(
+                self.barbican_api.CINDER_NODE_TYPE)
+
+            names = ""
+            for node in self.nodes:
+                if names:
+                    names += ", "
+                names += node['node_name']
+
+            names_field = self.fields['node_names']
+            names_field.initial = names
+
+        except Exception as ex:
+            redirect = reverse("horizon:admin:hpe_storage:index")
+            exceptions.handle(request,
+                              _('Unable to run diagnostic test.'),
+                              redirect=redirect)
+
+    def handle(self, request, data):
+        try:
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+
+            for node in self.nodes:
+                run_cinder_node_test(node, self.barbican_api)
+
+            messages.success(request, _('Successfully ran all diagnostic tests'))
+            return True
+        except Exception as ex:
+            redirect = reverse("horizon:admin:hpe_storage:index")
+            exceptions.handle(request,
+                              _('Unable to run diagnostic tests: ') + ex.message,
+                              redirect=redirect)
+
+
+class TestNova(forms.SelfHandlingForm):
+    node_name = forms.CharField(
+        max_length=255,
+        label=_("Nova Node"),
+        required=False,
+        widget=forms.TextInput(
+        attrs={'readonly': 'readonly'}))
+
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
+    node = None
+
+    def __init__(self, request, *args, **kwargs):
+        super(TestNova, self).__init__(request, *args, **kwargs)
+        node_name = self.initial['node_name']
+        try:
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            self.node = self.barbican_api.get_node(
+                node_name,
+                self.barbican_api.NOVA_NODE_TYPE)
+
+        except Exception as ex:
+            redirect = reverse("horizon:admin:hpe_storage:index")
+            exceptions.handle(request,
+                              _('Unable to run diagnostic test.'),
+                              redirect=redirect)
+
+    def handle(self, request, data):
+        try:
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            run_software_test(self.node, self.barbican_api)
+            messages.success(request, _('Successfully ran diagnostic test'))
+            return True
+        except Exception as ex:
+            redirect = reverse("horizon:admin:hpe_storage:index")
+            exceptions.handle(request,
+                              _('Unable to run diagnostic test: ') + ex.message,
+                              redirect=redirect)
+
+
+class TestAllNova(forms.SelfHandlingForm):
+    node_names = forms.CharField(
+        max_length=500,
+        label=_("Nova Nodes"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={'rows': 6, 'readonly': 'readonly'}))
+
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
+    nodes = None
+
+    def __init__(self, request, *args, **kwargs):
+        super(forms.SelfHandlingForm, self).__init__(request, *args, **kwargs)
+        try:
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            self.nodes = self.barbican_api.get_all_nodes(
+                self.barbican_api.NOVA_NODE_TYPE)
+
+            names = ""
+            for node in self.nodes:
+                if names:
+                    names += ", "
+                names += node['node_name']
+
+            names_field = self.fields['node_names']
+            names_field.initial = names
+
+        except Exception as ex:
+            redirect = reverse("horizon:admin:hpe_storage:index")
+            exceptions.handle(request,
+                              _('Unable to run diagnostic test.'),
+                              redirect=redirect)
+
+    def handle(self, request, data):
+        try:
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+
+            for node in self.nodes:
+                run_software_test(node, self.barbican_api)
+
+            messages.success(request, _('Successfully ran all diagnostic tests'))
+            return True
+        except Exception as ex:
+            redirect = reverse("horizon:admin:hpe_storage:index")
+            exceptions.handle(request,
+                              _('Unable to run diagnostic tests: ') + ex.message,
+                              redirect=redirect)

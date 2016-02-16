@@ -1,0 +1,9 @@
+{% load i18n %}
+
+<h3>{% trans "Raw Cinder Scheduler Stats Data" %}</h3>
+<h5>{% trans "*Note that this data is used by Cinder Scheduler process to determine how and where to provision volumes." %}</h5>
+<div class="row-fluid">
+  <div class="span12">
+    {{ table.render }}
+  </div>
+</div>

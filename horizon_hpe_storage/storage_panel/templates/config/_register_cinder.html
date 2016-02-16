@@ -1,0 +1,25 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Register a Cinder node so that it's "cinder.conf" file can be validated and
+      all assoicated backend storage arrays can be "discovered".
+      <br>
+      <br>
+      Both the "cinder.conf" diagnostic test and backend storage discovery will
+      rely on connecting to the Cinder node via SSH.
+      <br>
+      <br>
+      The diagnostic test will check the "cinder.conf" configuration file and verify
+      that the backend HPE 3PAR storage settings are correct. It will also validate that
+      the required HPE 3PAR driver is installed.
+      <br>
+      <br>
+      For backend storage array discovery, all arrays specified in "cinder.conf" will
+      be accessed and authenticated.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+

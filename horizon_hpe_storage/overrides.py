@@ -79,21 +79,21 @@ class LaunchElementManagerVolume(BaseElementManager):
     LOG.info(("Deep Link - launch element manager volume"))
     name = "link_volume"
     verbose_name = _("View Volume in HPE 3PAR SSMC")
-    url = "horizon:admin:hpe_storage:endpoints:link_to_volume"
+    url = "horizon:admin:hpe_storage:config:link_to_volume"
 
 
 class LaunchElementManagerCPG(BaseElementManager):
     LOG.info(("Deep Link - launch element manager CPG"))
     name = "link_cpg"
     verbose_name = _("View Volume CPG in HPE 3PAR SSMC")
-    url = "horizon:admin:hpe_storage:endpoints:link_to_cpg"
+    url = "horizon:admin:hpe_storage:config:link_to_cpg"
 
 
 class LaunchElementManagerDomain(BaseElementManager):
     LOG.info(("Deep Link - launch element manager domain"))
     name = "link_domain"
     verbose_name = _("View Volume Domain in HPE 3PAR SSMC")
-    url = "horizon:admin:hpe_storage:endpoints:link_to_domain"
+    url = "horizon:admin:hpe_storage:config:link_to_domain"
 
 
 class VolumesTableWithLaunch(volumes_tables.VolumesTable):

@@ -30,15 +30,13 @@ class HTTPJSONRESTClient(httplib2.Http):
      An HTTP REST Client that sends and recieves JSON data as the body of the
      HTTP request.
 
-     :param api_url: The url to the WSAPI service on 3PAR
-                     ie. http://<3par server>:8080
+     :param api_url: The url to the service
      :type api_url: str
      :param insecure: Use https? requires a local certificate
      :type insecure: bool
 
      """
 
-    USER_AGENT = 'python-3parclient'
     SESSION_COOKIE_NAME = 'Authorization'
 
 
@@ -117,7 +115,7 @@ class HTTPJSONRESTClient(httplib2.Http):
 
     def request(self, *args, **kwargs):
         """
-        This makes an HTTP Request to the 3Par server.
+        This makes an HTTP Request to the service.
         You should use get, post, delete instead.
 
         """

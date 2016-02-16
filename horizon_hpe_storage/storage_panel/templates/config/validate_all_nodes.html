@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Validate SSH Credentials" %}{% endblock %}
+
+{% block main %}
+    {% include 'config/_validate_all_nodes.html' %}
+{% endblock %}

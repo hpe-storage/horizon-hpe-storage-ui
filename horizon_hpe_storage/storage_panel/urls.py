@@ -16,12 +16,14 @@ from django.conf.urls import include
 from django.conf.urls import patterns
 from django.conf.urls import url
 
-from horizon_hpe_storage.storage_panel.endpoints \
-    import urls as endpoint_urls
+from horizon_hpe_storage.storage_panel.overview \
+    import urls as overview_urls
+from horizon_hpe_storage.storage_panel.config \
+    import urls as config_urls
 from horizon_hpe_storage.storage_panel.diags \
     import urls as diag_urls
-from horizon_hpe_storage.storage_panel.backend_systems \
-    import urls as backend_urls
+from horizon_hpe_storage.storage_panel.storage_arrays \
+    import urls as array_urls
 
 from horizon_hpe_storage.storage_panel import views
 
@@ -29,12 +31,15 @@ urlpatterns = patterns(
     '',
     url(r'^$', views.IndexView.as_view(), name='index'),
     url(r'^\?tab=storage_tabs$',
-        views.IndexView.as_view(), name='endpoints_tab'),
+        views.IndexView.as_view(), name='config_tab'),
     url(r'^\?tab=storage_tabs$',
         views.IndexView.as_view(), name='diags_tab'),
-    url(r'', include(endpoint_urls, namespace='endpoints')),
-    url(r'diags/', include(diag_urls, namespace='diags')),
-    url(r'^backend_systems/',
-        include(backend_urls,
-                namespace='backend_systems')),
+    url(r'overview/',
+        include(overview_urls, namespace='overview')),
+    url(r'config/',
+        include(config_urls, namespace='config')),
+    url(r'diags/',
+        include(diag_urls, namespace='diags')),
+    url(r'^storage_arrays/',
+        include(array_urls, namespace='storage_arrays')),
 )

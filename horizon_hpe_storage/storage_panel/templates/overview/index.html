@@ -1,0 +1,93 @@
+{#<img src=" {{ STATIC_URL }}diags/logo-splash.svg" width="35px" height="35px" />#}
+<p>
+  <h1>Hewlett Packard Enterprise Storage</h1>
+  <h4>This HPE Horizon plug-in is provided to help administrators better manage their OpenStack
+  Cinder enviornment and HPE 3PAR StoreServ backend storage arrays.</h4>
+  The main functions of this plug-in are:
+  <ul style="list-style-type:square">
+    <li>Validate OpenStack Cinder configuration files to ensure they are properly specified.</li>
+    <li>Provide detailed views of all HPE Storage Arrays configured for Cinder backend
+      storage.</li>
+    <li>Provide a direct link between OpenStack volumes and their associated detail views
+    in the HPE storage management console.</li>
+  </ul>
+  <br>
+  The HPE Horzion plug-in consists of multiple tabs, each described in detail below:
+  <h4><b>Configuration</b></h4>
+  Use this panel to configure all of the features of the HPE Storage Horizon plug-in
+  tool. This includes:
+  <br>
+  <br>
+  <ul style="list-style-type:square">
+    <li>Cinder node registration</li>
+    <br>
+      Register Cinder nodes by supplying their node addresses, SSH
+      credentials to access the node, and the path to the "cinder.conf"
+      configuration file. This information is required to
+      perform diagnostic tests and for discovering backend HPE storage arrays.
+    <br>
+    <br>
+    <li>Nova node registration (Optional)</li>
+    <br>
+      Register Nova nodes by supplying their node addresses and the SSH
+      credentials to access them. This information is required to perform diagnostic tests.
+    <br>
+    <br>
+    <li>Links between Cinder backends and SSMC instances</li>
+    <br>
+      Configure links between Cinder backends and HPE 3PAR StoreServ Management Console (SSMC)
+      instances. Once created, any volume hosted on the Cinder backend will have
+      additional actions available in the Horizon Admin volumes table, including the abilty
+      to link directly to its associated volume details panel in HPE SSMC.
+  </ul>
+  <br>
+  <h4><b>Diagnostic Tests</b></h4>
+  Use this panel to perform diagnostic tests on registered Cinder and Nova nodes.
+  <br>
+  <br>
+  For Cinder nodes, the
+  test consists of validating HPE related "cinder.conf" file settings, and verifying that the
+  HPE 3PAR driver and other required software utilies are installed.
+  <br>
+  <br>
+  For Nova nodes, the
+  test checks for the installation of required software utilities.
+  <br>
+  <br>
+  <h4><b>Storage Arrays</b></h4>
+  Use this panel to view details on all discovered HPE storage arrays. Details include:
+  <br>
+  <ul style="list-style-type:square">
+    <li>Array model type, serial number, OS and REST API (WSAPI) versions</li>
+    <li>Array license information and how each relates to OpenStack features</li>
+    <li>Storage pool capabilites</li>
+  </ul>
+  <br>
+  <h2>Where to begin...</h2>
+  <h4>To verify your OpenStack Cinder and Nova environment and discover HPE 3PAR backend
+    storage arrays:</h4>
+  <ol>
+    <li>Go to the "Configuration" tab and register all your Cinder and Nova nodes.</li>
+    <li>Click the "Validate SSH Credentials" button to validate the registration
+      information you entered is correct.</li>
+    <li>Go to the "Diagnostic Tests" tab and run diagnostic tests on all of your
+      registered Cinder and Nova nodes. An added feature of running diagnostic tests on
+      Cinder nodes is the discovery of backend storage arrays.
+    </li>
+    <li>Go to the "Storage Arrays" tab to see what HPE 3PAR StoreServ arrays were discovered
+      by the running of the Cinder diagnostic tests.</li>
+  </ol>
+  <h4>To add direct links from OpenStack volumes to associated HPE 3PAR SSMC detailed
+    views:</h4>
+  <ol>
+    <li>Go to the "Configuration" tab and add links between Cinder backends and
+      instances of HPE 3PAR SSMC.</li>
+    <li>Go to the Admin -> Volumes panel to view additional actions associated
+      with all volumes that were assigned to the Cinder backend specified in the
+      previous step.</li>
+    <li>Select one of the new actions to launch directly to the volumes
+      associated views in HPE 3PAR SSMC.</li>
+  </ol>
+  <br>
+  <br>
+</p>

@@ -1,0 +1,8 @@
+{% load i18n sizeformat parse_date %}
+
+<div class="detail">
+  <h5>{% trans "The following is all the raw data collected during the last run of the diagnostic test and discovery process on the Cinder node. This data can be useful when attempting to diagnose issues with Cinder and/or backend storage arrays." %}</h5>
+  <br>
+  <textarea rows="30" cols="100" spellcheck="false">{{ test.raw_test_data }}</textarea>
+
+</div>

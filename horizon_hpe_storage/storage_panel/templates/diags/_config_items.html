@@ -1,0 +1,27 @@
+{% load i18n sizeformat parse_date %}
+
+<div class="detail">
+  <h5>{% trans "The following is a list of the items in cinder.conf that the diagnostic test is scanning for. If the value of the item is blank, it indicates that this item is either missing or misspelled in the configuration file." %}</h5>
+  <br>
+  <dl class="dl-horizontal">
+  {% for results in test.config_test_results %}
+    <hr class="header_rule">
+    <dt>{% trans "Driver Configuration" %}</dt>
+    <dd>{{ results.backend_name }}</dd>
+    <p></p>
+    {% for key, value in results.config_items.items %}
+      <dt>{{ key }}</dt>
+      <dd>{{ value }}</dd>
+      <p></p>
+      <p></p>
+    {% empty %}
+      <dd><em>{% trans "No valid items found" %}</em></dd>
+      <p></p>
+      <p></p>
+    {% endfor %}
+    <p></p>
+    <p></p>
+  {% endfor %}
+  </dl>
+
+</div>

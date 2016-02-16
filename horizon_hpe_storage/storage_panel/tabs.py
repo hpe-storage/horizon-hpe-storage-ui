@@ -18,118 +18,165 @@ from operator import itemgetter
 from horizon import exceptions
 from horizon import tabs
 
-from horizon_hpe_storage.storage_panel.endpoints \
-    import tables as endpoint_tables
+from horizon_hpe_storage.storage_panel.overview \
+    import tables as overview_tables
+from horizon_hpe_storage.storage_panel.config \
+    import tables as config_tables
 from horizon_hpe_storage.storage_panel.diags \
     import tables as diags_tables
-from horizon_hpe_storage.storage_panel.backend_systems \
-    import tables as backend_tables
+from horizon_hpe_storage.storage_panel.storage_arrays \
+    import tables as arrays_tables
+
 
 import horizon_hpe_storage.api.keystone_api as keystone
 import horizon_hpe_storage.api.barbican_api as barbican
 
 
-class EndpointsTab(tabs.TableTab):
-    table_classes = (endpoint_tables.EndpointsTable,)
-    name = _("3PAR SSMC Links")
-    slug = "endpoints_tab"
-    template_name = "horizon/common/_detail_table.html"
+class ConfigTab(tabs.TableTab):
+    table_classes = (config_tables.EndpointsTable,
+                     config_tables.CinderNodeTable,
+                     config_tables.NovaNodeTable,)
+    name = _("Configuration")
+    slug = "config_tab"
+    template_name = "config/config_tables.html"
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
 
     def get_endpoints_data(self):
         endpoints = []
 
         try:
-            keystone_api = keystone.KeystoneAPI()
-            keystone_api.do_setup(self.request)
-            token = keystone_api.get_session_key()
-            endpoints = keystone_api.get_ssmc_endpoints()
+            self.keystone_api.do_setup(self.request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            endpoints = self.keystone_api.get_ssmc_endpoints()
 
             # for each endpoint, get credentials
-            barbican_api = barbican.BarbicanAPI()
-            barbican_api.do_setup(None)
             for endpoint in endpoints:
-                uname, pwd = barbican_api.get_credentials(
-                    token, endpoint['backend'])
+                uname, pwd = self.barbican_api.get_ssmc_credentials(
+                    endpoint['backend'])
                 endpoint['username'] = uname
 
-        except Exception:
+        except Exception as ex:
             msg = _('Unable to retrieve endpoints list.')
             exceptions.handle(self.request, msg)
         return endpoints
 
+    def get_reg_cinder_nodes_data(self):
+        sorted_nodes = []
+
+        try:
+            self.keystone_api.do_setup(self.request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            nodes = self.barbican_api.get_all_nodes(
+                self.barbican_api.CINDER_NODE_TYPE)
+            sorted_nodes = sorted(nodes, key=itemgetter('node_name'))
+
+        except Exception as ex:
+            msg = _('Unable to retrieve Cinder Node list.')
+            exceptions.handle(self.request, msg)
+        return sorted_nodes
+
+
+    def get_reg_nova_nodes_data(self):
+        sorted_nodes = []
+
+        try:
+            self.keystone_api.do_setup(self.request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            nodes = self.barbican_api.get_all_nodes(
+                self.barbican_api.NOVA_NODE_TYPE)
+            sorted_nodes = sorted(nodes, key=itemgetter('node_name'))
+
+        except Exception as ex:
+            msg = _('Unable to retrieve Nova Node list.')
+            exceptions.handle(self.request, msg)
+        return sorted_nodes
+
 
 class DiagsTab(tabs.TableTab):
-    table_classes = (diags_tables.DiagsTable,)
-                     # endpoint_tables.EndpointsTable,)
-    name = _("Cinder Diagnostics & Discovery")
+    table_classes = (diags_tables.CinderNodeTable,
+                     diags_tables.NovaNodeTable,)
+    name = _("Diagnostic Tests")
     slug = "diags_tab"
-    template_name = "horizon/common/_detail_table.html"
+    template_name = "diags/diag_tables.html"
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
 
-    def get_diags_data(self):
-        tests = []
-        sorted_tests = []
+    def get_diag_cinder_nodes_data(self):
+        sorted_nodes = []
 
         try:
-            keystone_api = keystone.KeystoneAPI()
-            keystone_api.do_setup(self.request)
-            token = keystone_api.get_session_key()
-
-            # grab all tests from barbican
-            barbican_api = barbican.BarbicanAPI()
-            barbican_api.do_setup(None)
-            tests = barbican_api.get_all_diag_tests(token)
-            sorted_tests = sorted(tests, key=itemgetter('test_name'))
+            self.keystone_api.do_setup(self.request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            nodes = self.barbican_api.get_all_nodes(
+                self.barbican_api.CINDER_NODE_TYPE)
+            sorted_nodes = sorted(nodes, key=itemgetter('node_name'))
 
         except Exception as ex:
-            msg = _('Unable to retrieve diagnostic test list.')
+            msg = _('Unable to retrieve Cinder Node list.')
             exceptions.handle(self.request, msg)
-        return sorted_tests
+        return sorted_nodes
 
 
-class BackendsTab(tabs.TableTab):
-    table_classes = (backend_tables.BackendsTable,)
-    name = _("Backend Storage Systems")
-    slug = "backends_tab"
-    template_name = "horizon/common/_detail_table.html"
-
-    def get_backends_data(self):
-        backend_systems = []
+    def get_diag_nova_nodes_data(self):
+        sorted_nodes = []
 
         try:
-            keystone_api = keystone.KeystoneAPI()
-            keystone_api.do_setup(self.request)
-            token = keystone_api.get_session_key()
+            self.keystone_api.do_setup(self.request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            nodes = self.barbican_api.get_all_nodes(
+                self.barbican_api.NOVA_NODE_TYPE)
+            sorted_nodes = sorted(nodes, key=itemgetter('node_name'))
 
-            # grab all tests from barbican
-            barbican_api = barbican.BarbicanAPI()
-            barbican_api.do_setup(None)
-            tests = barbican_api.get_all_diag_tests(token)
+        except Exception as ex:
+            msg = _('Unable to retrieve Nova Node list.')
+            exceptions.handle(self.request, msg)
+        return sorted_nodes
+
+
+class ArraysTab(tabs.TableTab):
+    table_classes = (arrays_tables.StorageArraysTable,)
+    name = _("Storage Arrays")
+    slug = "arrays_tab"
+    template_name = "horizon/common/_detail_table.html"
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
+
+    def get_storage_arrays_data(self):
+        storage_arrays = []
+
+        try:
+            self.keystone_api.do_setup(self.request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            nodes = self.barbican_api.get_all_nodes(
+                self.barbican_api.CINDER_NODE_TYPE)
 
             # now generate backend system info from tests
-            for test in tests:
-                config_status = test['config_test_status']
-                backends = config_status.split("Backend Section:")
-                for backend in backends:
-                    if backend:
-                        raw_results = backend.split("::")
-                        disp_results = {}
-                        disp_results['backend_name'] = "[" + raw_results[0] + "]"
-                        for raw_result in raw_results:
-                            if raw_result.startswith('system_info'):
-                                data = self.get_backend_system_info(
-                                    raw_result[12:])
-                                data['test_name'] = test['test_name']
-                                backend_systems.append(data)
+            for node in nodes:
+                if 'diag_test_status' in node:
+                    config_status = node['diag_test_status']
+                    backends = config_status.split("Backend Section:")
+                    for backend in backends:
+                        if backend:
+                            raw_results = backend.split("::")
+                            disp_results = {}
+                            disp_results['backend_name'] = "[" + raw_results[0] + "]"
+                            for raw_result in raw_results:
+                                if raw_result.startswith('system_info'):
+                                    data = self.get_storage_array_info(
+                                        raw_result[12:])
+                                    data['test_name'] = node['node_name']
+                                    storage_arrays.append(data)
 
-            backend_systems = self.trim_backend_list(backend_systems)
+            storage_arrays = self.trim_array_list(storage_arrays)
 
         except Exception as ex:
-            msg = _('Unable to retrieve diagnostic test list.')
+            msg = _('Unable to retrieve backend storage arrays.')
             exceptions.handle(self.request, msg)
 
-        return backend_systems
+        return storage_arrays
 
-    def get_backend_system_info(self, data):
+    def get_storage_array_info(self, data):
         # pull all of the data out
         disp_results = {}
         items = data.split(";;")
@@ -143,7 +190,7 @@ class BackendsTab(tabs.TableTab):
 
         return disp_results
 
-    def trim_backend_list(self, cur_backend_list):
+    def trim_array_list(self, cur_backend_list):
         # modify our list to include list of cinder hosts
         temp_backend_list = []
         for cur_backend in cur_backend_list:
@@ -181,8 +228,19 @@ class BackendsTab(tabs.TableTab):
         return new_backend_list
 
 
+class OverviewTab(tabs.TableTab):
+    name = _("Overview")
+    slug = "overview_tab"
+    template_name = "overview/index.html"
+    table_classes = (overview_tables.OverviewTable,)
+
+    def get_overview_panel_data(self):
+        list = []
+        return list
+
+
 class StorageTabs(tabs.TabGroup):
     slug = "storage_tabs"
-    tabs = (EndpointsTab, DiagsTab, BackendsTab)
+    tabs = (OverviewTab, ConfigTab, DiagsTab, ArraysTab)
     sticky = True
     # show_single_tab = True

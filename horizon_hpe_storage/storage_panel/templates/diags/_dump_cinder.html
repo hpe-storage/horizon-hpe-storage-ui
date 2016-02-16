@@ -1,0 +1,18 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      A display of all the raw data collected during the latest run of the
+      diagnostic test and discovery on the Cinder node. This data can be useful when
+      attempting to diagnose issues with Cinder and/or backend storage arrays.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+
+{% block modal-footer %}
+  <a href="{% url 'horizon:admin:hpe_storage:index' %}" class="btn btn-default cancel">{% trans "Close" %}</a>
+{% endblock %}
+
+

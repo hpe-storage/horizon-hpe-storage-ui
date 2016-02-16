@@ -1,0 +1,18 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Storage array discovery is accomplished by performing diagnostic
+      tests on all registered Cinder nodes.
+      <br>
+      <br>
+      Once complete, the "Storage Arrays" table will be refreshed to show all the
+      arrays specified in each of the registered Cinder nodes "cinder.conf" files.
+      <br>
+      <br>
+      Warning - discovery may take several minutes to complete.
+     {% endblocktrans %}
+  </p>
+{% endblock %}

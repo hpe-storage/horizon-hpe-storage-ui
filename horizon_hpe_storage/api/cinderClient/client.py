@@ -12,26 +12,17 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-try:
-    # For Python 3.0 and later
-    from urllib.parse import quote
-except ImportError:
-    # Fall back to Python 2's urllib2
-    from urllib2 import quote
-
 import http
 
 
 class CinderClient(object):
 
-    """ The 3PAR REST API Client.
+    """ Client layer to access HTTP calls to Cinder backend.
 
-    :param api_url: The url to the WSAPI service on 3PAR
-                    ie. http://<3par server>:8080/api/v1
-    :type api_url: str
+    This is needed due to limitations in current python-cinderclient API.
+    Features not supported by python-cinderclient will be implemented here.
 
     """
-
 
     def __init__(self, api_url):
         self.api_url = api_url
@@ -39,7 +30,7 @@ class CinderClient(object):
         api_version = None
 
     def debug_rest(self, flag):
-        """This is useful for debugging requests to 3PAR.
+        """This is useful for debugging requests to service.
 
         :param flag: set to True to enable debugging
         :type flag: bool
@@ -49,7 +40,7 @@ class CinderClient(object):
 
 
     def login(self, username, password, optional=None):
-        """This authenticates against the 3PAR wsapi server and creates a
+        """This authenticates against the service and creates a
            session.
 
         :param username: The username
@@ -63,17 +54,14 @@ class CinderClient(object):
         self.http.authenticateKeystone(username, password, optional)
 
     def logout(self):
-        """This destroys the session and logs out from the 3PAR server.
-           The SSH connection to the 3PAR server is also closed.
+        """This destroys the session and logs out from the service.
+           The SSH connection to the service is also closed.
 
         :returns: None
 
         """
         self.http.unauthenticateKeystone()
 
-
-    def getCinderPools(self, token, tenant_id):
-        return self.http.getCinderPools(token, tenant_id)
 
     def getHostCapabilities(self, token, tenant_id, host):
         return self.http.getHostCapabilities(token, tenant_id, host)

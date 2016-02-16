@@ -1,0 +1,15 @@
+{% block main %}
+  <div id="cinder-nodes">
+      {{ reg_cinder_nodes_table.render }}
+  </div>
+  <br>
+  <br>
+  <div id="nova-nodes">
+      {{ reg_nova_nodes_table.render }}
+  </div>
+  <br>
+  <br>
+  <div id="endpoints">
+      {{ endpoints_table.render }}
+  </div>
+{% endblock %}

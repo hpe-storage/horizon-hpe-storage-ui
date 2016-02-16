@@ -1,0 +1,62 @@
+{% load i18n sizeformat parse_date %}
+
+<h3>{% trans "Diagnostic Test Overview" %}</h3>
+
+<div class="detail">
+  <dl class="dl-horizontal">
+    <dt>{% trans "Test Name" %}</dt>
+    <dd>{{ test.test_name }}</dd>
+    <dt>{% trans "Last Run" %}</dt>
+    <dd>{{ test.run_time }}</dd>
+    <dt>{% trans "Node Type" %}</dt>
+    <dd>{{ test.service_type }}</dd>
+    <dt>{% trans "Node IP" %}</dt>
+    <dd>{{ test.host_ip }}</dd>
+    <dt>{% trans "SSH Username" %}</dt>
+    <dd>{{ test.ssh_name }}</dd>
+    <dt>{% trans "Cinder config file path" %}</dt>
+    <dd>{{ test.config_path }}</dd>
+  </dl>
+
+  {% if test.service_type == "cinder" %}
+    <h4>{% trans "Cinder Backend Test Results<br><i>(tests are performed using values specified in cinder.conf)</i>" %}</h4>
+    <hr class="header_rule">
+    <dl class="dl-horizontal">
+    {% for results in test.config_test_results %}
+      <dt>{% trans "Driver Configuration" %}</dt>
+      <dd>{{ results.backend_name }}</dd>
+      <dt>{% trans "CPG exists" %}</dt>
+      <dd>{{ results.cpg }}</dd>
+      <dt>{% trans "Credentials are valid" %}</dt>
+      <dd>{{ results.credentials }}</dd>
+      <dt>{% trans "WS API url connection" %}</dt>
+      <dd>{{ results.wsapi }}</dd>
+      <dt>{% trans "iSCSI IP(s) are valid" %}</dt>
+      <dd>{{ results.iscsi }}</dd>
+      <dt>{% trans "Volume Driver exists" %}</dt>
+      <dd>{{ results.driver }}</dd>
+      <p></p>
+      <p></p>
+    {% empty %}
+      <dd><em>{% trans "N/A" %}</em></dd>
+    {% endfor %}
+    </dl>
+  {% endif %}
+
+  <h4>{% trans "Software Test Results" %}</h4>
+  <hr class="header_rule">
+  <dl class="dl-horizontal">
+  {% for results in test.software_test_results %}
+    <dt>{% trans "Software Package" %}</dt>
+    <dd>{{ results.package }}</dd>
+    <dt>{% trans "Installed" %}</dt>
+    <dd>{{ results.installed }}</dd>
+    <dt>{% trans "Version" %}</dt>
+    <dd>{{ results.version }}</dd>
+    <p></p>
+    <p></p>
+  {% empty %}
+    <dd><em>{% trans "N/A" %}</em></dd>
+  {% endfor %}
+  </dl>
+</div>

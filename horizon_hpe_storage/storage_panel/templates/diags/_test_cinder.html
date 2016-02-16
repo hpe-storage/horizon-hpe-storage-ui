@@ -1,0 +1,19 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Run the diagnostic test and discovery on the Cinder node. The test includes
+      validating the entries in the "cinder.conf" file, and verifying the
+      HPE 3PAR client is installed on the system.
+      <br>
+      <br>
+      As a result of the test, Cinder backends and storage arrays will be discovered.
+      <br>
+      <br>
+      Warning - this test may take several minutes to complete.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+

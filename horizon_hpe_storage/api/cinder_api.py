@@ -45,8 +45,8 @@ class CinderAPI(object):
         if self.debug:
             self.client.debug_rest(True)
 
-    def get_pools(self, token, tenant_id):
-        return self.client.getCinderPools(token, tenant_id)
+    # def get_pools(self, token, tenant_id):
+    #     return self.client.getCinderPools(token, tenant_id)
 
     def get_capabilities(self, token, tenant_id, host):
         return self.client.getHostCapabilities(token, tenant_id, host)

@@ -17,6 +17,12 @@ import uuid
 from django.conf import settings
 
 from keystoneClient import client
+from keystoneclient.v2_0 import client as k_client
+from keystoneclient.v3 import client as k3_client
+from keystoneauth1 import session as k_session
+
+from openstack_dashboard.api import keystone as horizon_keystone
+
 
 import logging
 
@@ -32,30 +38,35 @@ class KeystoneAPI(object):
         self.debug = True
         self.launch_page = self.keystone_api_url + '/#/launch-page/'
         self.showUrl = '/virtual-volumes/show/overview/r'
+        self.token = None
+        self.session = None
 
     def do_setup(self, request):
-        session = request.session
-        # if 'unscoped_token' in session:
-        #     token = request.session['unscoped_token']
-        # else:
-        #     token = request.session._session['token'].unscoped_token
         try:
-            token = request.session['unscoped_token']
-            tenant_id = request.session._session['token'].project['id']
-            self.client = client.KeystoneClient(self.keystone_api_url)
-            self.client.initClient(token, tenant_id)
+            cur_token = request.session['unscoped_token']
+            # only init new cliet with admin token if token has expired and
+            # been re-issued (i.e. user had to log back in)
+            if self.token != cur_token:
+                self.token = cur_token
+                tenant_id = request.session._session['token'].project['id']
+                self.client = client.KeystoneClient(self.keystone_api_url)
+                self.client.initClient(self.token, tenant_id)
+                if self.debug:
+                    self.client.debug_rest(True)
+
+                keystone_client = k_client.Client(token=self.get_token_id(),
+                                      endpoint=self.keystone_api_url + "/v2.0",
+                                      tenant_name='admin')
+                self.session = k_session.Session(auth=keystone_client)
+
         except Exception as ex:
             return
-        if self.debug:
-            self.client.debug_rest(True)
 
-    # def get_session_token(self):
-    #     LOG.debug("Requesting Token from Keystone")
-    #     return self.client.getSessionKeystoneToken(self.keystone_username,
-    #                                                self.keystone_passwd)
+    def get_session(self):
+        return self.session
 
-    def get_session_key(self):
-        return self.client.getSessionKey()
+    def get_token_id(self):
+        return self.client.getTokenId()
 
     def get_tenant_id(self):
         return self.client.getTenantId()

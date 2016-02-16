@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Run Diagnostic Tests" %}{% endblock %}
+
+{% block main %}
+    {% include 'diags/_test_all_cinder.html' %}
+{% endblock %}

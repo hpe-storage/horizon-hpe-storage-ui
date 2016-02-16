@@ -1,0 +1,18 @@
+{% load i18n sizeformat parse_date %}
+
+<h3>{% trans "Backend Config Items" %}</h3>
+
+<div class="detail">
+  <h4>{% trans "The following is a list of the items that the diagnostic test is scanning for. If the value of the item is blank, it indicates that this item is either missing or misspelled in the 'cinder.conf' configuration file." %}</h4>
+  <br>
+  <dl class="dl-horizontal">
+  {% for key, value in backend_data.config_items.items %}
+    <dt>{{ key }}</dt>
+    <dd>{{ value }}</dd>
+    <p></p>
+  {% empty %}
+    <dd><em>{% trans "No valid items found" %}</em></dd>
+  {% endfor %}
+  </dl>
+
+</div>

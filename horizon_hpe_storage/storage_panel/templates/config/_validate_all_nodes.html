@@ -1,0 +1,18 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Run connection tests on all registered nodes to verify SSH credentials.
+      <br>
+      <br>
+      SSH connection tests will fail if either the node is unreachable, or the provided
+      SSH credentials are invalid.
+      <br>
+      <br>
+      Warning - these tests may take several minutes to complete.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+

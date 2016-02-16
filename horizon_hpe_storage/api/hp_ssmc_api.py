@@ -90,6 +90,7 @@ class HPSSMC(object):
         :rtype : object
         """
         volume_name = self._encode_name(volume_id)
+        LOG.info(("3PAR Volume Name: osv-%s") % volume_name)
         return "osv-%s" % volume_name
 
     def get_session_token(self):

@@ -23,21 +23,13 @@ from horizon_hpe_storage.api.common import http
 
 class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
     """
-    An HTTP REST Client that sends and recieves JSON data as the body of the
-    HTTP request.
-
-    :param api_url: The url to the WSAPI service on 3PAR
-                    ie. http://<3par server>:8080
-    :type api_url: str
-    :param insecure: Use https? requires a local certificate
-    :type insecure: bool
-
+    HTTP/REST client to access keystone service
     """
 
     def initClient(self, token, tenant_id):
         # use the unscoped token from the Horizon session to get a
         # real admin token that we can use to access Keystone and Barbican
-        self.session_key = None
+        self.token_id = None
         self.auth_try = 0
         try:
             info = {
@@ -54,14 +46,14 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                 access = body['access']
                 if 'token' in access:
                     newToken = access['token']
-                    self.session_key = newToken['id']
+                    self.token_id = newToken['id']
                     self.tenant_id = tenant_id
         except Exception as ex:
             exceptions.handle(self.request,
                               ('Unable to get Keystone token.'))
 
-    def getSessionKey(self):
-        return self.session_key
+    def getTokenId(self):
+        return self.token_id
 
     def getTenantId(self):
         return self.tenant_id
@@ -69,7 +61,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
     def getSSMCEndpointForHost(self, host):
         try:
             # first get service id
-            header = {'X-Auth-Token': self.getSessionKey()}
+            header = {'X-Auth-Token': self.token_id}
 
             resp, body = self.get('/v3/services?name=ssmc-' + host, headers=header)
             if body and 'services' in body:
@@ -94,7 +86,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
     def getSSMCEndpointForServiceName(self, service_name):
         # first get service id
-        header = {'X-Auth-Token': self.getSessionKey()}
+        header = {'X-Auth-Token': self.token_id}
 
         resp, body = self.get('/v3/services?name=ssmc-3parfc', headers=header)
         if body and 'services' in body:
@@ -116,7 +108,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
     def getSSMCEndpointForServiceId(self, service_id):
         # first get service id
-        header = {'X-Auth-Token': self.getSessionKey()}
+        header = {'X-Auth-Token': self.token_id}
 
         url = '/v3/services/' + service_id
         resp, body = self.get(url, headers=header)
@@ -139,7 +131,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         return None
 
     def getSSMCServiceName(self, service_id):
-        header = {'X-Auth-Token': self.getSessionKey()}
+        header = {'X-Auth-Token': self.token_id}
 
         url = '/v3/services/' + service_id
         resp, body = self.get(url, headers=header)
@@ -154,7 +146,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         endpoints = []
         # get all 3par-link services
         self.auth_try = 1
-        header = {'X-Auth-Token': self.getSessionKey()}
+        header = {'X-Auth-Token': self.token_id}
         try:
             resp, body = self.get('/v3/services?type=3par-link', headers=header)
             if body and 'services' in body:
@@ -179,7 +171,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
     def addSSMCEndpoint(self, service_name, endpoint):
         # first add service
-        header = {'X-Auth-Token': self.getSessionKey()}
+        header = {'X-Auth-Token': self.token_id}
         info = {
             'service': {
                 'type': '3par-link',
@@ -209,7 +201,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         # first need to get endpoint id
         endpt, service_name = self.getSSMCEndpointForServiceId(service_id)
         endpt_id = endpt['id']
-        header = {'X-Auth-Token': self.getSessionKey()}
+        header = {'X-Auth-Token': self.token_id}
         # update endpoint for service
         try:
             info = {
@@ -226,7 +218,7 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                               ('Unable to update SSMC Endpoint URL.'))
 
     def deleteSSMCEndpoint(self, service_id):
-        header = {'X-Auth-Token': self.getSessionKey()}
+        header = {'X-Auth-Token': self.token_id}
         try:
             # first delete endpoint for the service
             endpt, service_name = self.getSSMCEndpointForServiceId(service_id)

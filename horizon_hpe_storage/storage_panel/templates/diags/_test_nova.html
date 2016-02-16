@@ -1,0 +1,15 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Run the diagnostic test on the Nova node. The test will verify
+      required software is installed on the system.
+      <br>
+      <br>
+      Warning - this test may take several minutes to complete.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+
