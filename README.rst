@@ -12,42 +12,32 @@ Overview
 This plug-in extends the OpenStack Horizon Dashboard and provides useful features for
 OpenStack environments that use HPE 3PAR for backend storage.
 
-This plug-in adds an "HPE Storage" panel to the Admin dashboard. When this panel is selected,
-the associated window will have tabs to manage/view HPE Storage related data. The tabs
-are as follows:
+This plug-in adds an "HPE Storage" panel to the Admin dashboard, and provides diagnostic
+and discover tools to help administrators better manage their OpenStack Cinder
+environment and HPE 3PAR StoreServ backend storage arrays.
 
-"3PAR SSMC Links"
-Feature on this panel will allow an admin user to associate an instance of HPE 3PAR SSMC
-(HPE storage management software for the 3PAR) with an OpenStack storage backend (as
-defined by /etc/cinder/cinder.conf). Once this association is in place, links will be
-provided in the Horizon volumes table that the user can click on to directly jump to the
-volume data page in the associated SSMC panel. The data shown in the SSMC panel provides
-much more detail than what is shown in Horizon.
+Key features:
 
-"Cinder Diagnostics & Discovery"
-Here the user enters configuration params for accessing cinder.conf files - what system(s)
-they are located on and access credentials. Once completed, a diagnostic test can be
-run to validate the users config.conf file(s). Checks are made to ensure the backend storage
-systems are accessible, credentials are correct, and specified CPG's exist. During the
-execution of the tests, backend storage systems are discovered and queried.
-
-"Backend Storage Systems"
-As a result of the cinder.conf diagnostic tests, a list of backend storage systems are
-discovered. The results are shown in this panel. Along with general information about the
-system (name, serial number, software versions, etc), the panel also shows license
-information and cinder host capabilities (capacity, QOS support, max number of volumes, etc).
+* Validate OpenStack Cinder configuration file (cinder.conf) entries to ensure they
+are properly specified.
+* Validate required software packages and drivers are installed on Cinder and Nova
+nodes.
+* Provide detailed Horizon views of all HPE Storage Arrays configured for Cinder
+backend storage.
+* Provide a direct link between OpenStack volumes and their associated detail views
+in the HPE storage management console (HPE 3PAR SSMC).
 
 Requirements
 ------------
 
-The OpenStack Barbican service is required for this plug-in.
-(see https://wiki.openstack.org/wiki/Barbican)
+The following packages are required for this plug-in:
 
-The HPE Storage Diagnostic Tool must be installed to enable the "Cinder Diagnostics" features of this plug-in.
-(see https://pypi.python.org/pypi/cinderdiags). This should be done automatically during
-the install of the "horizon-hpe-storage-ui" package.
+* OpenStack Barbican (https://pypi.python.org/pypi/python-barbicanclient)
+* HPE Storage Diagnostic Tool (https://pypi.python.org/pypi/cinderdiags)
 
-This plug-in is only intended for use on systems running Horizon.
+Both of these packages will be installed automatically when this plug-in is installed.
+
+This plug-in is only intended for use on systems running OpenStack Horizon.
 
 Installation instructions
 -------------------------

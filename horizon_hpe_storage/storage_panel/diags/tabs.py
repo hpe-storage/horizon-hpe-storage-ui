@@ -64,20 +64,3 @@ class TestDetailTabs(tabs.TabGroup):
 class SWTestDetailTabs(tabs.TabGroup):
     slug = "software_test_details"
     tabs = (OverviewTab, )
-
-
-class BackendOverviewTab(tabs.Tab):
-    name = _("Backend")
-    slug = "backend"
-    template_name = ("diags/_backend_details.html")
-
-    def get_context_data(self, request):
-        return {"backend_data": self.tab_group.kwargs['backend_data']}
-
-
-class BackendDetailTabs(tabs.TabGroup):
-    slug = "backend_details"
-    # tabs = (OverviewTab, SystemInfoTab)
-    # only show test results. System info has its own panel.
-    # but keep around as example of having tabbed detail panel
-    tabs = (BackendOverviewTab,)

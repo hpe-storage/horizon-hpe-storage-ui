@@ -99,40 +99,6 @@ class DiagSoftwareTestResultsColumn(tables.Column):
            return "N/A"
 
 
-def get_backend_name(node_name, backend_name):
-    try:
-        full_name = node_name + "::" + backend_name
-        url = reverse("horizon:admin:hpe_storage:diags:" + \
-                      "backend_detail", args=(full_name,)) + \
-                      "backend_details"
-        backend_name = "[" + backend_name + "]"
-        backend = '<a href="%s">%s</a>' % (url, html.escape(backend_name))
-    except NoReverseMatch:
-        backend = html.escape(backend_name)
-    return backend
-
-class DiagBackendsColumn(tables.Column):
-    # Customized column class.
-    def get_raw_data(self, node):
-        if 'diag_run_time' in node and \
-                        node['validation_time'] != 'Failed' and \
-                        'diag_test_status' in node:
-            node_name = node['node_name']
-            link = _('%(backend_name)s')
-            backends = []
-            items = node['diag_test_status'].split("::")
-            for item in items:
-                if item.startswith('Backend Section'):
-                    fields = item.split(":")
-                    backend_name = get_backend_name(node_name, fields[1])
-                    vals = {"backend_name": backend_name}
-                    backends.append(link % vals)
-
-            return safestring.mark_safe("<br>".join(backends))
-        else:
-            return "N/A"
-
-
 class RunAllCinderDiagsAction(tables.LinkAction):
     name = "test_cinder"
     verbose_name = _("Run Diagnostics Test on All Cinder Nodes")
@@ -153,20 +119,6 @@ class RunCinderDiagsAction(tables.LinkAction):
     verbose_name = _("Run Diagnostics Test")
     url = "horizon:admin:hpe_storage:diags:test_cinder_node"
     classes = ("ajax-modal",)
-
-
-class DumpCinderStatsAction(tables.LinkAction):
-    name = "dump_stats"
-    verbose_name = _("View Diagnostic Test and Discovery Results")
-    url = "horizon:admin:hpe_storage:diags:dump_cinder_node"
-    classes = ("ajax-modal",)
-
-    def allowed(self, request, node=None):
-        if 'diag_test_status' in node:
-            # means we have run diag test
-            return True
-
-        return False
 
 
 class CinderNodeTable(tables.DataTable):
@@ -190,9 +142,6 @@ class CinderNodeTable(tables.DataTable):
     # software_results = DiagSoftwareTestResultsColumn(
     #     'software_results',
     #     verbose_name=_('Software Test'))
-    # backends = DiagBackendsColumn(
-    #     'backends',
-    #     verbose_name=_('Driver Configurations'))
 
     def get_object_id(self, node):
         return node['node_name']
@@ -202,7 +151,6 @@ class CinderNodeTable(tables.DataTable):
         verbose_name = _("Cinder Nodes")
         hidden_title = False
         table_actions = (RunAllCinderDiagsAction,)
-        # row_actions = (RunCinderDiagsAction, DumpCinderStatsAction)
         row_actions = (RunCinderDiagsAction, )
 
 

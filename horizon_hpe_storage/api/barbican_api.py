@@ -16,7 +16,7 @@ from django.conf import settings
 
 from barbicanclient import client as b_client
 
-
+import json
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -107,21 +107,27 @@ class BarbicanAPI(object):
 
     # Cinder/Nova node registration and diagnostics functions
     def get_node(self, name, type):
-        nodeData = {}
+        node_data = {}
         container  = self._get_container(type + '-cinderdiags-' + name)
         if container:
             srefs = container.secret_refs
             for key, value in srefs.items():
-                data = self.client.secrets.get(value).payload
+                data_str = self.client.secrets.get(value).payload
+                data = json.loads(data_str)
                 # pull out the meta data about the test
-                if key == 'meta_test_data':
-                    raw_results = data.split("###")
-                    for raw_result in raw_results:
-                        entry = raw_result.split("%%%")
-                        nodeData[entry[0]] = entry[1]
-                else:
-                    nodeData[key] = data
-            return nodeData
+                meta_data = data["meta_data"]
+                for key, value in meta_data.iteritems():
+                    node_data[key] = value
+
+                if 'diag_test_status' in data:
+                    node_data['diag_test_status'] = \
+                        data['diag_test_status']
+
+                if 'software_test_status' in data:
+                    node_data['software_test_status'] = \
+                        data['software_test_status']
+
+            return node_data
         return None
 
     def nodes_exist(self, type):
@@ -139,18 +145,24 @@ class BarbicanAPI(object):
             if container.name.startswith(type):
                 srefs = container.secret_refs
                 if srefs:
-                    nodeData = {}
+                    node_data = {}
                     for key, value in srefs.items():
-                        data = self.client.secrets.get(value).payload
+                        data_str = self.client.secrets.get(value).payload
+                        data = json.loads(data_str)
                         # pull out the meta data about the test
-                        if key == 'meta_test_data':
-                            raw_results = data.split("###")
-                            for raw_result in raw_results:
-                                entry = raw_result.split("%%%")
-                                nodeData[entry[0]] = entry[1]
-                        else:
-                            nodeData[key] = data
-                    nodes.append(nodeData)
+                        meta_data = data["meta_data"]
+                        for key, value in meta_data.iteritems():
+                            node_data[key] = value
+
+                        if 'diag_test_status' in data:
+                            node_data['diag_test_status'] = \
+                                data['diag_test_status']
+
+                        if 'software_test_status' in data:
+                            node_data['software_test_status'] = \
+                                data['software_test_status']
+
+                        nodes.append(node_data)
         return nodes
 
     def delete_node(self, name, type):
@@ -169,98 +181,39 @@ class BarbicanAPI(object):
                  ssh_validation_time=None):
         # first create secret for each field
         secrets = {}
-        meta_data = ""
 
-        # add meta data into one secret
-        meta_data += "node_name" + "%%%" + name
-        meta_data += "###"
-        meta_data += "node_type" + "%%%" + type
-        meta_data += "###"
-        meta_data += "node_ip" + "%%%" + ip
-        meta_data += "###"
-        meta_data += "ssh_name" + "%%%" + ssh_name
-        meta_data += "###"
-        meta_data += "ssh_pwd" + "%%%" + ssh_pwd
+        node_data = {}
+
+        meta_data = {}
+        meta_data["node_name"] = name
+        meta_data["node_type"] = type
+        meta_data["node_ip"] = ip
+        meta_data["ssh_name"] = ssh_name
+        meta_data["ssh_pwd"] = ssh_pwd
 
         if config_path:
-            meta_data += "###"
-            meta_data += "config_path" + "%%%" + config_path
+            meta_data["config_path"] = config_path
 
         if diag_run_time:
-            meta_data += "###"
-            meta_data += "diag_run_time" + "%%%" + diag_run_time
+            meta_data["diag_run_time"] = diag_run_time
 
         if ssh_validation_time:
-            meta_data += "###"
-            meta_data += "validation_time" + "%%%" + ssh_validation_time
+            meta_data["validation_time"] = ssh_validation_time
+
+        node_data["meta_data"] = meta_data
 
         if diag_status:
-            meta_data += "###"
-            meta_data += "diag_test_status" + "%%%" + diag_status
+            node_data["diag_test_status"] = diag_status
 
         if software_status:
-            meta_data += "###"
-            meta_data += "software_test_status" + "%%%" + software_status
+            node_data["software_test_status"] = software_status
 
+        # store as json string
+        node_data_str = json.dumps(node_data)
         secret = self.client.secrets.create(
-            name="meta_test_data",
-            payload=meta_data)
-        secrets['meta_test_data'] = secret
-
-        # secret = self.client.secrets.create(
-        #     name="node_name",
-        #     payload=name)
-        # secrets['node_name'] = secret
-        #
-        # secret = self.client.secrets.create(
-        #     name="node_type",
-        #     payload=type)
-        # secrets['node_type'] = secret
-        #
-        # secret = self.client.secrets.create(
-        #     name="node_ip",
-        #     payload=ip)
-        # secrets['node_ip'] = secret
-        #
-        # secret = self.client.secrets.create(
-        #     name="ssh_name",
-        #     payload=ssh_name)
-        # secrets['ssh_name'] = secret
-        #
-        # secret = self.client.secrets.create(
-        #     name="ssh_pwd",
-        #     payload=ssh_pwd)
-        # secrets['ssh_pwd'] = secret
-        #
-        # if config_path:
-        #     secret = self.client.secrets.create(
-        #         name="config_path",
-        #         payload=config_path)
-        #     secrets['config_path'] = secret
-        #
-        # if diag_status:
-        #     secret = self.client.secrets.create(
-        #         name="diag_test_status",
-        #         payload=diag_status)
-        #     secrets['diag_test_status'] = secret
-        #
-        # if software_status:
-        #     secret = self.client.secrets.create(
-        #         name="software_test_status",
-        #         payload=software_status)
-        #     secrets['software_test_status'] = secret
-        #
-        # if diag_run_time:
-        #     secret = self.client.secrets.create(
-        #         name="diag_run_time",
-        #         payload=diag_run_time)
-        #     secrets['diag_run_time'] = secret
-        #
-        # if ssh_validation_time:
-        #     secret = self.client.secrets.create(
-        #         name="validation_time",
-        #         payload=ssh_validation_time)
-        #     secrets['validation_time'] = secret
+            name="node_data",
+            payload=node_data_str)
+        secrets['node_data'] = secret
 
         # create container
         secret_list = {}
