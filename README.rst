@@ -9,23 +9,16 @@ Hewlett Packard Enterprise Storage Dashboard
 Overview
 ---------
 
-This plug-in extends the OpenStack Horizon Dashboard and provides useful features for
-OpenStack environments that use HPE 3PAR for backend storage.
+This plug-in extends the OpenStack Horizon Dashboard and provides useful features for OpenStack environments that use HPE 3PAR for backend storage.
 
-This plug-in adds an "HPE Storage" panel to the Admin dashboard, and provides diagnostic
-and discover tools to help administrators better manage their OpenStack Cinder
-environment and HPE 3PAR StoreServ backend storage arrays.
+This plug-in adds an "HPE Storage" panel to the Admin dashboard, and provides diagnostic and discover tools to help administrators better manage their OpenStack Cinder environment and HPE 3PAR StoreServ backend storage arrays.
 
 Key features:
 
-* Validate OpenStack Cinder configuration file (cinder.conf) entries to ensure they
-are properly specified.
-* Validate required software packages and drivers are installed on Cinder and Nova
-nodes.
-* Provide detailed Horizon views of all HPE Storage Arrays configured for Cinder
-backend storage.
-* Provide a direct link between OpenStack volumes and their associated detail views
-in the HPE storage management console (HPE 3PAR SSMC).
+* Validate OpenStack Cinder configuration file (cinder.conf) entries to ensure they are properly specified.
+* Validate required software packages and drivers are installed on Cinder and Nova nodes.
+* Provide detailed Horizon views of all HPE Storage Arrays configured for Cinder backend storage.
+* Provide a direct link between OpenStack volumes and their associated detail views in the HPE storage management console (HPE 3PAR SSMC).
 
 Requirements
 ------------
@@ -65,9 +58,7 @@ Or, to add to existing OpenStack deployment::
     sudo service apache2 restart
 
     
-After reloading the Horizon dashboard in your browser, log-in as an "Admin" user. If the plug-in
-was successfully loaded, you should see a new "HPE Storage" panel listed at the bottom of the "Admin"
-section.
+After reloading the Horizon dashboard in your browser, log-in as an "Admin" user. If the plug-in was successfully loaded, you should see a new "HPE Storage" panel listed at the bottom of the "Admin" section.
 
 Uninstalling the plug-in
 ------------------------
