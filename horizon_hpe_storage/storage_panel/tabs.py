@@ -68,7 +68,7 @@ class ConfigTab(tabs.TableTab):
             self.keystone_api.do_setup(self.request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
             sorted_nodes = sorted(nodes, key=itemgetter('node_name'))
 
         except Exception as ex:
@@ -84,7 +84,7 @@ class ConfigTab(tabs.TableTab):
             self.keystone_api.do_setup(self.request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.NOVA_NODE_TYPE)
+                barbican.NOVA_NODE_TYPE)
             sorted_nodes = sorted(nodes, key=itemgetter('node_name'))
 
         except Exception as ex:
@@ -109,7 +109,7 @@ class DiagsTab(tabs.TableTab):
             self.keystone_api.do_setup(self.request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
             sorted_nodes = sorted(nodes, key=itemgetter('node_name'))
 
         except Exception as ex:
@@ -125,7 +125,7 @@ class DiagsTab(tabs.TableTab):
             self.keystone_api.do_setup(self.request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.NOVA_NODE_TYPE)
+                barbican.NOVA_NODE_TYPE)
             sorted_nodes = sorted(nodes, key=itemgetter('node_name'))
 
         except Exception as ex:
@@ -149,7 +149,7 @@ class ArraysTab(tabs.TableTab):
             self.keystone_api.do_setup(self.request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
 
             # now generate backend system info from tests
             for node in nodes:

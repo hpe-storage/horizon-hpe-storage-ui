@@ -1,0 +1,14 @@
+{% extends "horizon/common/_modal.html" %}
+{% load i18n %}
+
+{% block modal_id %}sw_tests_modal{% endblock %}
+{% block modal-header %}{% trans "Software Test List" %}{% endblock %}
+
+{% block modal-body %}
+    {{ table.render }}
+{% endblock %}
+
+{% block modal-footer %}
+  <a href="{% url 'horizon:admin:hpe_storage:index' %}" class="btn btn-default cancel">{% trans "Close" %}</a>
+{% endblock %}
+

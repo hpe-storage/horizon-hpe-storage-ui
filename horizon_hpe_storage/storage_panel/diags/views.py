@@ -91,15 +91,15 @@ class TestAllCinderView(forms.ModalFormView):
     page_title = _("Run Diagnostic Test")
 
 
-class TestDetailView(tabs.TabView):
-    tab_group_class = diags_tabs.TestDetailTabs
+class CinderTestDetailView(tabs.TabView):
+    tab_group_class = diags_tabs.CinderTestDetailTabs
     template_name = 'horizon/common/_detail.html'
     page_title = "{{ test.test_name }}"
     keystone_api = keystone.KeystoneAPI()
     barbican_api = barbican.BarbicanAPI()
 
     def get_context_data(self, **kwargs):
-        context = super(TestDetailView, self).get_context_data(**kwargs)
+        context = super(CinderTestDetailView, self).get_context_data(**kwargs)
         test_results = self.get_data()
         context['test'] = test_results
         context['url'] = self.get_redirect_url()
@@ -120,29 +120,30 @@ class TestDetailView(tabs.TabView):
             test_results = {}
             test_results['test_name'] = node['node_name']
             test_results['run_time'] = node['diag_run_time']
-
             test_results['service_type'] = node_type
-
             test_results['host_ip'] = node['node_ip']
             test_results['ssh_name'] = node['ssh_name']
-
             test_results['config_path'] = "N/A"
 
-            if node_type == self.barbican_api.CINDER_NODE_TYPE:
+            test_results['test_descriptions'] = self.get_test_descriptions()
+
+            if node_type == barbican.CINDER_NODE_TYPE:
                 test_results['config_path'] = node['config_path']
 
                 config_status = node['diag_test_status']
                 backend_sections = []
                 storage_arrays = []
+                test_table_list = []
                 self.backend_serial_numbers = []
                 backends = config_status.split("Backend Section:")
                 for backend in backends:
                     if backend:
                         raw_results = backend.split("::")
+                        backend_name = "[" + raw_results[0] + "]"
                         disp_results = {}
-                        disp_results['backend_name'] = \
-                            "[" + raw_results[0] + "]"
+                        disp_results['backend_name'] = backend_name
                         for raw_result in raw_results:
+                            test_table_entry = {}
                             if raw_result.startswith('system_info'):
                                 data = self.get_backend_system_info(
                                     raw_result[12:])
@@ -166,10 +167,20 @@ class TestDetailView(tabs.TabView):
                                     disp_results[key] = \
                                         self.color_result(value)
 
+                                    test_table_entry['backend_name'] = \
+                                        backend_name
+                                    test_table_entry['test'] = key
+                                    test_table_entry['result'] = value
+
+                            if test_table_entry:
+                                test_table_list.append(test_table_entry)
+
                         backend_sections.append(disp_results)
 
                 test_results['config_test_results'] = backend_sections
                 test_results['systems_info'] = storage_arrays
+                test_results['test_table_data'] = self.format_test_data(
+                    test_table_list)
 
             software_status = node['software_test_status']
             node_groups = []
@@ -185,6 +196,8 @@ class TestDetailView(tabs.TabView):
                     node_groups.append(disp_results)
 
             test_results['software_test_results'] = node_groups
+            test_results['formatted_software_test_results'] = \
+                self.format_sw_data(node_groups)
 
             test_results['raw_test_data'] = self.get_raw_data(node)
             # node['test_results'] = test_results
@@ -197,9 +210,13 @@ class TestDetailView(tabs.TabView):
         return test_results
 
     def color_result(self, value):
-        fail_str = safestring.mark_safe('<font color="red">fail</font>')
-        if value == "fail":
+        fail_str = safestring.mark_safe("<font color='red'>FAIL</font>")
+        pass_str = safestring.mark_safe("<font color='green'>PASS</font>")
+
+        if value.strip() == "fail":
             return fail_str
+        elif value.strip() == "pass":
+            return pass_str
 
         return value
 
@@ -225,47 +242,54 @@ class TestDetailView(tabs.TabView):
         return disp_results
 
     def get_raw_data(self, node):
+        node_type = node['node_type']
+
         stats = "node name: " + node['node_name'] + "\n"
-        stats += "node type: " + node['node_type'] + "\n"
+        stats += "node type: " + node_type + "\n"
         stats += "ip: " + node['node_ip'] + "\n"
         stats += "SSH uname: " + node['ssh_name'] + "\n"
         stats += "SSH pwd: " + ('*' * len(node['ssh_pwd'])) + "\n"
-        stats += "config path: " + node['config_path'] + "\n"
+        if node_type == barbican.CINDER_NODE_TYPE:
+            stats += "config path: " + node['config_path'] + "\n"
         stats += "run time: " + node['validation_time'] + "\n"
 
-        diag_test = node['diag_test_status']
-        backends = diag_test.split("Backend Section:")
-        for backend in backends:
-            if backend:
-                stats += "\r\n"
-                raw_results = backend.split("::")
-                stats += "Driver Configuration Section [" + \
-                         raw_results[0] + "]:\n"
-                test_results = ""
-                for raw_result in raw_results:
-                    if raw_result.startswith('system_info'):
-                        system_info = self.get_raw_backend_system_info(
-                            raw_result[12:])
-                    elif raw_result.startswith('config_items'):
-                        config_items = ""
-                        item_str = raw_result[len('config_items:'):]
-                        items = item_str.split(";;")
-                        for item in items:
-                            if "==" in item:
-                                key, value = item.split("==")
-                                if "password" in key:
-                                    value = '*' * len(value)
-                                config_items += \
+        if node_type == barbican.CINDER_NODE_TYPE:
+            diag_test = node['diag_test_status']
+            backends = diag_test.split("Backend Section:")
+            for backend in backends:
+                if backend:
+                    stats += "\r\n"
+                    raw_results = backend.split("::")
+                    stats += "Driver Configuration Section [" + \
+                             raw_results[0] + "]:\n"
+                    test_results = ""
+                    for raw_result in raw_results:
+                        if raw_result.startswith('system_info'):
+                            system_info = self.get_raw_backend_system_info(
+                                raw_result[12:])
+                        elif raw_result.startswith('config_items'):
+                            config_items = ""
+                            item_str = raw_result[len('config_items:'):]
+                            items = item_str.split(";;")
+                            for item in items:
+                                if "==" in item:
+                                    key, value = item.split("==")
+                                    if "password" in key:
+                                        value = '*' * len(value)
+                                    config_items += \
+                                        ("\t\t" + key + ": " + value + "\n")
+                        else:
+                            if ":" in raw_result:
+                                key, value = raw_result.split(":")
+                                test_results += \
                                     ("\t\t" + key + ": " + value + "\n")
-                    else:
-                        if ":" in raw_result:
-                            key, value = raw_result.split(":")
-                            test_results += \
-                                ("\t\t" + key + ": " + value + "\n")
 
-                stats += "\n\tConfig Items ('cinder.conf'):\n" + config_items
-                stats += "\n\tTest Results for 'cinder.conf':\n" + test_results
-                stats += "\n\tSystem Information:\n" + system_info
+                    stats += "\n\tConfig Items ('cinder.conf'):\n" + \
+                             config_items
+                    stats += "\n\tTest Results for 'cinder.conf':\n" + \
+                             test_results
+                    stats += "\n\tSystem Information:\n" + \
+                             system_info
 
         software_status = node['software_test_status']
         node_groups = []
@@ -319,6 +343,96 @@ class TestDetailView(tabs.TabView):
 
         return disp_results + license_str + pool_info
 
+    def format_test_data(self, test_data):
+        # format properly for diagnostic test table
+        formatted_data = []
+        current_backend = None
+        entry = {}
+        tests = []
+        for test in test_data:
+            if test['backend_name'] != current_backend:
+                if current_backend:
+                    entry['test'] = safestring.mark_safe("<br>".join(tests))
+                    formatted_data.append(entry)
+
+                current_backend = test['backend_name']
+                entry = {}
+                entry['backend_name'] = current_backend
+                tests = []
+
+            test_result = self.color_result(test['result'])
+            if "cpg" in test['test']:
+                entry['cpgs'] = test_result
+            elif "credentials" in test['test']:
+                entry['credentials'] = test_result
+            elif "wsapi" in test['test']:
+                entry['wsapi'] = test_result
+            elif "iscsi" in test['test']:
+                entry['iscsi'] = test_result
+            elif "driver" in test['test']:
+                entry['driver'] = test_result
+
+        formatted_data.append(entry)
+        return formatted_data
+
+    def get_test_descriptions(self):
+        tests = [
+            {"test": "Credentials",
+             "entries_used": "hpe3par_username and hpe3par_password",
+             "description": "On the Cinder node, attempt to log into the "
+                "HPE 3PAR client ('python-3parclient')."},
+
+            {"test": "WS API",
+             "entries_used": "hpe3par_api_url",
+             "description": "Using the HPE 3PAR client on the Cinder "
+                "node, attempt to open a connection to the URL."},
+
+            {"test": "CPGs",
+             "entries_used": "hpe3par_cpg",
+             "description": "Using the HPE 3PAR client on the Cinder "
+                "node, verify that each CPG exists on the array."},
+
+            {"test": "iSCSI IP(s)",
+             "entries_used": "hpe3par_iscsi_ports and/or iscsi_ip_address",
+             "description": "(Only applicable for iSCSI drivers) Using the "
+                "HPE 3PAR client on the Cinder node, query the array to "
+                "verify that all IPs exist and are enabled "
+                "('linkSate' = 'READY' and 'protocol' = 'ISCSI')."},
+
+            {"test": "Volume Driver",
+             "entries_used": "volume_driver",
+             "description": "Verify that the driver exists on the "
+                "Cinder node."}
+        ]
+        return tests
+
+    def format_sw_data(self, sw_tests):
+        self.keystone_api.do_setup(self.request)
+        self.barbican_api.do_setup(self.keystone_api.get_session())
+        software_list = \
+            self.barbican_api.get_software_tests(barbican.CINDER_NODE_TYPE)
+        software_results = []
+        for sw_test in sw_tests:
+            entry = {}
+            package_name = sw_test['package'].split(" (")[0]
+            for software in software_list:
+                if package_name in software['package']:
+                    entry['package'] = software['package']
+                    entry['description'] = software['description']
+                    entry['min_version'] = software['min_version']
+                    if "FAIL" in sw_test['installed'].upper():
+                        entry['curr_version'] = "Not Installed"
+                        entry['test_result'] = self.color_result("fail")
+                    else:
+                        version_info = sw_test['version'].split(" (")
+                        entry['curr_version'] = version_info[1][:-1]
+                        entry['test_result'] = self.color_result(
+                            version_info[0])
+                    software_results.append(entry)
+                    break
+
+        return software_results
+
     def get_redirect_url(self):
         return reverse('horizon:admin:hpe_storage:index')
 
@@ -327,15 +441,15 @@ class TestDetailView(tabs.TabView):
         return self.tab_group_class(request, test=test, **kwargs)
 
 
-class SWTestDetailView(tabs.TabView):
-    tab_group_class = diags_tabs.SWTestDetailTabs
+class NovaTestDetailView(tabs.TabView):
+    tab_group_class = diags_tabs.NovaTestDetailTabs
     template_name = 'horizon/common/_detail.html'
     page_title = "{{ test.test_name }}"
     keystone_api = keystone.KeystoneAPI()
     barbican_api = barbican.BarbicanAPI()
 
     def get_context_data(self, **kwargs):
-        context = super(SWTestDetailView, self).get_context_data(**kwargs)
+        context = super(NovaTestDetailView, self).get_context_data(**kwargs)
         test_results = self.get_data()
         context['test'] = test_results
         context['url'] = self.get_redirect_url()
@@ -356,12 +470,9 @@ class SWTestDetailView(tabs.TabView):
             test_results = {}
             test_results['test_name'] = node['node_name']
             test_results['run_time'] = node['diag_run_time']
-
             test_results['service_type'] = node_type
-
             test_results['host_ip'] = node['node_ip']
             test_results['ssh_name'] = node['ssh_name']
-
             test_results['config_path'] = "N/A"
 
             software_status = node['software_test_status']
@@ -378,6 +489,11 @@ class SWTestDetailView(tabs.TabView):
                     node_groups.append(disp_results)
 
             test_results['software_test_results'] = node_groups
+            test_results['formatted_software_test_results'] = \
+                self.format_sw_data(node_groups)
+
+            test_results['raw_test_data'] = self.get_raw_data(node)
+            # node['test_results'] = test_results
 
         except Exception as ex:
             redirect = self.get_redirect_url()
@@ -387,11 +503,66 @@ class SWTestDetailView(tabs.TabView):
         return test_results
 
     def color_result(self, value):
-        fail_str = safestring.mark_safe('<font color="red">fail</font>')
-        if value == "fail":
+        fail_str = safestring.mark_safe("<font color='red'>FAIL</font>")
+        pass_str = safestring.mark_safe("<font color='green'>PASS</font>")
+
+        if value.strip() == "fail":
             return fail_str
+        elif value.strip() == "pass":
+            return pass_str
 
         return value
+
+    def get_raw_data(self, node):
+        node_type = node['node_type']
+
+        stats = "node name: " + node['node_name'] + "\n"
+        stats += "node type: " + node_type + "\n"
+        stats += "ip: " + node['node_ip'] + "\n"
+        stats += "SSH uname: " + node['ssh_name'] + "\n"
+        stats += "SSH pwd: " + ('*' * len(node['ssh_pwd'])) + "\n"
+        stats += "run time: " + node['validation_time'] + "\n"
+
+        software_status = node['software_test_status']
+        node_groups = []
+        nodes = software_status.split("Software Test:")
+        stats += "\nSoftware Test Results:\n"
+        for node in nodes:
+            if node:
+                raw_results = node.split("::")
+                for raw_result in raw_results:
+                    if ":" in raw_result:
+                        key, value = raw_result.split(":")
+                        stats += ("\t" + key + ": " + value + "\n")
+
+        return stats
+
+    def format_sw_data(self, sw_tests):
+        self.keystone_api.do_setup(self.request)
+        self.barbican_api.do_setup(self.keystone_api.get_session())
+        software_list = \
+            self.barbican_api.get_software_tests(barbican.NOVA_NODE_TYPE)
+        software_results = []
+        for sw_test in sw_tests:
+            entry = {}
+            package_name = sw_test['package'].split(" (")[0]
+            for software in software_list:
+                if package_name in software['package']:
+                    entry['package'] = software['package']
+                    entry['description'] = software['description']
+                    entry['min_version'] = software['min_version']
+                    if "FAIL" in sw_test['installed'].upper():
+                        entry['curr_version'] = "Not Installed"
+                        entry['test_result'] = self.color_result("fail")
+                    else:
+                        version_info = sw_test['version'].split(" (")
+                        entry['curr_version'] = version_info[1][:-1]
+                        entry['test_result'] = self.color_result(
+                            version_info[0])
+                    software_results.append(entry)
+                    break
+
+        return software_results
 
     def get_redirect_url(self):
         return reverse('horizon:admin:hpe_storage:index')

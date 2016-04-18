@@ -139,7 +139,7 @@ class DeleteCinderAction(tables.DeleteAction):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.barbican_api.delete_node(
-                obj_id, self.barbican_api.CINDER_NODE_TYPE)
+                obj_id, barbican.CINDER_NODE_TYPE)
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
             exceptions.handle(request,
@@ -159,7 +159,7 @@ class ValidateAllCinderAction(tables.LinkAction):
         self.keystone_api.do_setup(request)
         self.barbican_api.do_setup(self.keystone_api.get_session())
         return self.barbican_api.nodes_exist(
-            self.barbican_api.CINDER_NODE_TYPE)
+            barbican.CINDER_NODE_TYPE)
 
 
 class ValidateCinderAction(tables.LinkAction):
@@ -179,16 +179,26 @@ class EditCinderAction(tables.LinkAction):
     classes = ("ajax-modal",)
 
 
+class ViewCinderSoftwareTestsAction(tables.LinkAction):
+    name = "sw_cinder_tests"
+    verbose_name = _("View Software Test list")
+    url = "horizon:admin:hpe_storage:config:software_tests:index"
+    classes = ("ajax-modal",)
+
+    def get_link_url(self, extra_spec=None):
+        return reverse(self.url, args=[barbican.CINDER_NODE_TYPE])
+
+
 class TestResultsColumn(tables.Column):
     # Customized column class.
     def get_raw_data(self, node):
         if 'validation_time' in node:
             results = node['validation_time']
             if results == 'Failed':
-                results = '<font color="red">Failed</font>'
+                results = '<font color="red">FAIL</font>'
                 return safestring.mark_safe(results)
             else:
-                return safestring.mark_safe('<font color="green">Passed</font>')
+                return safestring.mark_safe('<font color="green">PASS</font>')
 
 
 class CinderNodeTable(tables.DataTable):
@@ -224,6 +234,7 @@ class CinderNodeTable(tables.DataTable):
         hidden_title = False
         table_actions = (RegisterCinderAction,
                          ValidateAllCinderAction,
+                         ViewCinderSoftwareTestsAction,
                          DeleteCinderAction,)
         row_actions = (ValidateCinderAction,
                        EditCinderAction,
@@ -263,7 +274,7 @@ class DeleteNovaAction(tables.DeleteAction):
         self.keystone_api.do_setup(request)
         self.barbican_api.do_setup(self.keystone_api.get_session())
         self.barbican_api.delete_node(
-            obj_id, self.barbican_api.NOVA_NODE_TYPE)
+            obj_id, barbican.NOVA_NODE_TYPE)
 
 
 class ValidateNovaAction(tables.LinkAction):
@@ -288,7 +299,17 @@ class ValidateAllNovaAction(tables.LinkAction):
         self.keystone_api.do_setup(request)
         self.barbican_api.do_setup(self.keystone_api.get_session())
         return self.barbican_api.nodes_exist(
-            self.barbican_api.NOVA_NODE_TYPE)
+            barbican.NOVA_NODE_TYPE)
+
+
+class ViewNovaSoftwareTestsAction(tables.LinkAction):
+    name = "sw_nova_tests"
+    verbose_name = _("View Software Test list")
+    url = "horizon:admin:hpe_storage:config:software_tests:index"
+    classes = ("ajax-modal",)
+
+    def get_link_url(self, extra_spec=None):
+        return reverse(self.url, args=[barbican.NOVA_NODE_TYPE])
 
 
 class EditNovaAction(tables.LinkAction):
@@ -327,6 +348,7 @@ class NovaNodeTable(tables.DataTable):
         hidden_title = False
         table_actions = (RegisterNovaAction,
                          ValidateAllNovaAction,
+                         ViewNovaSoftwareTestsAction,
                          DeleteNovaAction)
         row_actions = (ValidateNovaAction,
                        EditNovaAction,

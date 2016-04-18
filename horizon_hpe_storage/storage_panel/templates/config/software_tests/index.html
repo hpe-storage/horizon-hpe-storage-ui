@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Softare Test List" %}{% endblock %}
+
+{% block page_header %}
+  <h2>
+    {% block modal-header %}{% blocktrans %}Node Type: {{ node_type_display }}{% endblocktrans %}{% endblock %}
+  </h2>
+{% endblock page_header %}
+
+{% block main %}
+  {% include "config/software_tests/_index.html" %}
+{% endblock %}

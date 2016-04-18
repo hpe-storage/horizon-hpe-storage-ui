@@ -33,25 +33,25 @@ import horizon_hpe_storage.test_engine.node_test as tester
 from openstack_dashboard.api import cinder
 
 
-def run_cinder_node_test(node, barbican_api):
+def run_cinder_node_test(node, software_tests, barbican_api):
     credentials_data = {}
     all_data = []
 
     # note 'section' must be lower case for diag tool
     credentials_data['section'] = node['node_name'].lower() + '-' + \
-                                  barbican_api.CINDER_NODE_TYPE
-    credentials_data['service'] = barbican_api.CINDER_NODE_TYPE
+                                  barbican.CINDER_NODE_TYPE
+    credentials_data['service'] = barbican.CINDER_NODE_TYPE
     credentials_data['host_ip'] = node['node_ip']
     credentials_data['ssh_user'] = node['ssh_name']
     credentials_data['ssh_password'] = node['ssh_pwd']
     credentials_data['conf_source'] = node['config_path']
 
     all_data.append(credentials_data)
-    json_test_data = json.dumps(all_data)
+    json_conf_data = json.dumps(all_data)
 
     # run ssh validation check on cinder node
     node_test = tester.NodeTest()
-    node_test.run_credentials_check_test(json_test_data)
+    node_test.run_credentials_check_test(json_conf_data)
 
     cur_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if "fail" in node_test.test_result_text:
@@ -61,12 +61,12 @@ def run_cinder_node_test(node, barbican_api):
         # update test data
         barbican_api.delete_node(
             node['node_name'],
-            barbican_api.CINDER_NODE_TYPE)
+            barbican.CINDER_NODE_TYPE)
 
         result = "Failed"
         barbican_api.add_node(
             node['node_name'],
-            barbican_api.CINDER_NODE_TYPE,
+            barbican.CINDER_NODE_TYPE,
             node['node_ip'],
             node['ssh_name'],
             node['ssh_pwd'],
@@ -78,7 +78,7 @@ def run_cinder_node_test(node, barbican_api):
         return
 
     # run diag test on cinder node
-    node_test.run_options_check_test(json_test_data)
+    node_test.run_options_check_test(json_conf_data)
 
     config_status = ''
     LOG.info("Process test results - start options results")
@@ -99,8 +99,16 @@ def run_cinder_node_test(node, barbican_api):
                 "config_items:" + section['Conf Items'] + "::"
             LOG.info("options:config_status - %s" % config_status)
 
+    # build list of software to test against
+    all_data = []
+    sw_test_dict = {}
+    for software_test in software_tests:
+        sw_test_dict[software_test['package']] = software_test['min_version']
+    all_data.append(sw_test_dict)
+    json_sw_test_data = json.dumps(all_data)
+
     # run software test on cinder node
-    node_test.run_software_check_test(json_test_data)
+    node_test.run_software_check_test(json_conf_data, json_sw_test_data)
 
     software_status = ''
     LOG.info("Process test results - start software results")
@@ -121,11 +129,11 @@ def run_cinder_node_test(node, barbican_api):
     # update test data
     barbican_api.delete_node(
         node['node_name'],
-        barbican_api.CINDER_NODE_TYPE)
+        barbican.CINDER_NODE_TYPE)
 
     barbican_api.add_node(
         node['node_name'],
-        barbican_api.CINDER_NODE_TYPE,
+        barbican.CINDER_NODE_TYPE,
         node['node_ip'],
         node['ssh_name'],
         node['ssh_pwd'],
@@ -135,24 +143,24 @@ def run_cinder_node_test(node, barbican_api):
         diag_run_time=cur_time,
         ssh_validation_time= cur_time)
 
-def run_software_test(node, barbican_api):
+def run_nova_node_test(node, software_tests, barbican_api):
     credentials_data = {}
     all_data = []
 
     # note 'section' must be lower case for diag tool
     credentials_data['section'] = node['node_name'].lower() + '-' + \
-                                  barbican_api.NOVA_NODE_TYPE
-    credentials_data['service'] = barbican_api.NOVA_NODE_TYPE
+                                  barbican.NOVA_NODE_TYPE
+    credentials_data['service'] = barbican.NOVA_NODE_TYPE
     credentials_data['host_ip'] = node['node_ip']
     credentials_data['ssh_user'] = node['ssh_name']
     credentials_data['ssh_password'] = node['ssh_pwd']
 
     all_data.append(credentials_data)
-    json_test_data = json.dumps(all_data)
+    json_conf_data = json.dumps(all_data)
 
     # run ssh validation check on cinder node
     node_test = tester.NodeTest()
-    node_test.run_credentials_check_test(json_test_data)
+    node_test.run_credentials_check_test(json_conf_data)
 
     cur_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if "fail" in node_test.test_result_text:
@@ -162,12 +170,12 @@ def run_software_test(node, barbican_api):
         # update test data
         barbican_api.delete_node(
             node['node_name'],
-            barbican_api.NOVA_NODE_TYPE)
+            barbican.NOVA_NODE_TYPE)
 
         result = "Failed"
         barbican_api.add_node(
             node['node_name'],
-            barbican_api.NOVA_NODE_TYPE,
+            barbican.NOVA_NODE_TYPE,
             node['node_ip'],
             node['ssh_name'],
             node['ssh_pwd'],
@@ -177,8 +185,16 @@ def run_software_test(node, barbican_api):
         # no need to continue
         return
 
-    # run software test on cinder node
-    node_test.run_software_check_test(json_test_data)
+    # build list of software to test against
+    all_data = []
+    sw_test_dict = {}
+    for software_test in software_tests:
+        sw_test_dict[software_test['package']] = software_test['min_version']
+    all_data.append(sw_test_dict)
+    json_sw_test_data = json.dumps(all_data)
+
+    # run software test on nova node
+    node_test.run_software_check_test(json_conf_data, json_sw_test_data)
 
     software_status = ''
     LOG.info("Process test results - start software results")
@@ -199,11 +215,11 @@ def run_software_test(node, barbican_api):
     # update test data
     barbican_api.delete_node(
         node['node_name'],
-        barbican_api.NOVA_NODE_TYPE)
+        barbican.NOVA_NODE_TYPE)
 
     barbican_api.add_node(
         node['node_name'],
-        barbican_api.NOVA_NODE_TYPE,
+        barbican.NOVA_NODE_TYPE,
         node['node_ip'],
         node['ssh_name'],
         node['ssh_pwd'],
@@ -234,7 +250,7 @@ class DumpCinder(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             node = self.barbican_api.get_node(
                 node_name,
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
 
             stats = "node name: " + node['node_name'] + "\n"
             stats += "node type: " + node['node_type'] + "\n"
@@ -360,7 +376,7 @@ class TestCinder(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.node = self.barbican_api.get_node(
                 node_name,
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
 
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -372,7 +388,12 @@ class TestCinder(forms.SelfHandlingForm):
         try:
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
-            run_cinder_node_test(self.node, self.barbican_api)
+
+            # pass along the current set of software tests
+            sw_tests = self.barbican_api.get_software_tests(
+                barbican.CINDER_NODE_TYPE)
+
+            run_cinder_node_test(self.node, sw_tests, self.barbican_api)
             messages.success(request, _('Successfully ran diagnostic test'))
             return True
         except Exception as ex:
@@ -400,7 +421,7 @@ class TestAllCinder(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
 
             names = ""
             for node in self.nodes:
@@ -422,8 +443,12 @@ class TestAllCinder(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
 
+            # pass along the current set of software tests
+            sw_tests = self.barbican_api.get_software_tests(
+                barbican.CINDER_NODE_TYPE)
+
             for node in self.nodes:
-                run_cinder_node_test(node, self.barbican_api)
+                run_cinder_node_test(node, sw_tests, self.barbican_api)
 
             messages.success(request, _('Successfully ran all diagnostic tests'))
             return True
@@ -454,7 +479,7 @@ class TestNova(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.node = self.barbican_api.get_node(
                 node_name,
-                self.barbican_api.NOVA_NODE_TYPE)
+                barbican.NOVA_NODE_TYPE)
 
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -466,7 +491,12 @@ class TestNova(forms.SelfHandlingForm):
         try:
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
-            run_software_test(self.node, self.barbican_api)
+
+            # pass along the current set of software tests
+            sw_tests = self.barbican_api.get_software_tests(
+                barbican.NOVA_NODE_TYPE)
+
+            run_nova_node_test(self.node, sw_tests, self.barbican_api)
             messages.success(request, _('Successfully ran diagnostic test'))
             return True
         except Exception as ex:
@@ -494,7 +524,7 @@ class TestAllNova(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.NOVA_NODE_TYPE)
+                barbican.NOVA_NODE_TYPE)
 
             names = ""
             for node in self.nodes:
@@ -516,8 +546,12 @@ class TestAllNova(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
 
+            # pass along the current set of software tests
+            sw_tests = self.barbican_api.get_software_tests(
+                barbican.NOVA_NODE_TYPE)
+
             for node in self.nodes:
-                run_software_test(node, self.barbican_api)
+                run_nova_node_test(node, sw_tests, self.barbican_api)
 
             messages.success(request, _('Successfully ran all diagnostic tests'))
             return True

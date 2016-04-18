@@ -16,14 +16,50 @@ from django.utils.translation import ugettext_lazy as _
 
 from horizon import tabs
 
+from horizon_hpe_storage.storage_panel.diags \
+    import test_results_tables as test_tables
 
-class OverviewTab(tabs.Tab):
+import horizon_hpe_storage.api.barbican_api as barbican
+
+
+class CinderOverviewTab(tabs.TableTab):
     name = _("Diagnostic Test Results")
-    slug = "overview"
-    template_name = ("diags/_detail_test_overview.html")
+    slug = "cinder_overview"
+    table_classes = (test_tables.TestDescriptionTable,
+                     test_tables.BackendTestTable,
+                     test_tables.SoftwareTestTable)
+    template_name = ("diags/cinder_test_result_tables.html")
 
-    def get_context_data(self, request):
-        return {"test": self.tab_group.kwargs['test']}
+    def get_test_descriptions_data(self):
+        test = self.tab_group.kwargs['test']
+        test_data = None
+        if test['service_type'] == barbican.CINDER_NODE_TYPE:
+            test_data = test['test_descriptions']
+        return test_data
+
+    def get_backend_test_results_data(self):
+        test = self.tab_group.kwargs['test']
+        test_data = None
+        if test['service_type'] == barbican.CINDER_NODE_TYPE:
+            test_data = test['test_table_data']
+        return test_data
+
+    def get_software_test_results_data(self):
+        test = self.tab_group.kwargs['test']
+        test_data = test['formatted_software_test_results']
+        return test_data
+
+
+class NovaOverviewTab(tabs.TableTab):
+    name = _("Diagnostic Test Results")
+    slug = "nova_overview"
+    table_classes = (test_tables.SoftwareTestTable,)
+    template_name = ("diags/nova_test_result_tables.html")
+
+    def get_software_test_results_data(self):
+        test = self.tab_group.kwargs['test']
+        test_data = test['formatted_software_test_results']
+        return test_data
 
 
 class ConfigItemsTab(tabs.Tab):
@@ -53,14 +89,11 @@ class TEMPSystemInfoTab(tabs.Tab):
         return {"test": self.tab_group.kwargs['test']}
 
 
-class TestDetailTabs(tabs.TabGroup):
-    slug = "test_details"
-    # tabs = (OverviewTab, SystemInfoTab)
-    # only show test results. System info has its own panel.
-    # but keep around as example of having tabbed detail panel
-    tabs = (OverviewTab, ConfigItemsTab, RawTestDumpTab)
+class CinderTestDetailTabs(tabs.TabGroup):
+    slug = "cinder_test_details"
+    tabs = (CinderOverviewTab, ConfigItemsTab, RawTestDumpTab)
 
 
-class SWTestDetailTabs(tabs.TabGroup):
-    slug = "software_test_details"
-    tabs = (OverviewTab, )
+class NovaTestDetailTabs(tabs.TabGroup):
+    slug = "nova_test_details"
+    tabs = (NovaOverviewTab, RawTestDumpTab)

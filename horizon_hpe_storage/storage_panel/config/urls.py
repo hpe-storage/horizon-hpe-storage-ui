@@ -12,10 +12,13 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+from django.conf.urls import include
 from django.conf.urls import patterns
 from django.conf.urls import url
 
 from horizon_hpe_storage.storage_panel.config import views
+from horizon_hpe_storage.storage_panel.config.software_tests \
+    import urls as software_test_urls
 
 VIEWS_MOD = ('horizon_hpe_storage.storage_panel.config.views')
 
@@ -40,6 +43,9 @@ urlpatterns = patterns(
     url(r'^(?P<service_id>[^/]+)/edit_endpoint/$',
         views.EditEndpointView.as_view(),
         name='edit_endpoint'),
+
+    url(r'^(?P<node_type>[^/]+)/software_tests/',
+        include(software_test_urls, namespace='software_tests')),
 
     url(r'^register_cinder_node/$',
         views.RegisterCinderView.as_view(),

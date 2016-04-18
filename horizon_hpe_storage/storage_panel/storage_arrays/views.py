@@ -209,7 +209,7 @@ class LicenseDetailView(tabs.TabView):
 
             test = self.barbican_api.get_node(
                 self.keystone_api.get_session_key(),
-                test_name, self.barbican_api.CINDER_NODE_TYPE)
+                test_name, barbican.CINDER_NODE_TYPE)
 
             # find the 'system info' for our backend system
             config_status = test['diag_test_status']
@@ -304,7 +304,7 @@ class SystemDetailView(tabs.TabView):
             self.keystone_api.do_setup(self.request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             tests = self.barbican_api.get_all_nodes(
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
 
             # now generate backend system info from tests
             for test in tests:

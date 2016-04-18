@@ -1,0 +1,24 @@
+{#{% block title %}Diagnost Test Cinder Backend Test Results XXX{% endblock %}#}
+{% block main %}
+  <div id="test-descriptions">
+    {{ test_descriptions_table.render }}
+  </div>
+  <div id="backend-tests">
+    {{ backend_test_results_table.render }}
+  </div>
+{#  <br>#}
+  <div id="software_tests">
+      {{ software_test_results_table.render }}
+  </div>
+{% endblock %}
+
+{#{% load i18n %}#}
+{##}
+{#<h3>{% trans "Cinder Backend Test Results" %}</h3>#}
+{#<p>The </p>#}
+{#<div class="row-fluid">#}
+{#  <div class="span12">#}
+{#    {{ table.render }}#}
+{#      {{ backend_test_results_table.render }}#}
+{#  </div>#}
+{#</div>#}

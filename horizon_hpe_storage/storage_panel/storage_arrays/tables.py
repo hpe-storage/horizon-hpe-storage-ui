@@ -65,7 +65,7 @@ class RunDiscoveryAction(tables.LinkAction):
         self.keystone_api.do_setup(request)
         self.barbican_api.do_setup(self.keystone_api.get_session())
         return self.barbican_api.nodes_exist(
-            self.barbican_api.CINDER_NODE_TYPE)
+            barbican.CINDER_NODE_TYPE)
 
 
 def get_pool_name(pool_name):

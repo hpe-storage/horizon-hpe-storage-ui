@@ -306,7 +306,7 @@ def run_ssh_validation_test(node, node_type, barbican_api):
         result = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     config_path = None
-    if node_type == barbican_api.CINDER_NODE_TYPE:
+    if node_type == barbican.CINDER_NODE_TYPE:
         config_path = node['config_path']
 
     barbican_api.add_node(
@@ -362,7 +362,7 @@ class RegisterCinderNode(forms.SelfHandlingForm):
             if data['ssh_pwd'] != data['confirm_password']:
                 raise ValidationError(_('Passwords do not match.'))
 
-        data['service_type'] = self.barbican_api.CINDER_NODE_TYPE
+        data['service_type'] = barbican.CINDER_NODE_TYPE
         return data
 
     def handle(self, request, data):
@@ -371,7 +371,7 @@ class RegisterCinderNode(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.barbican_api.add_node(
                 data['node_name'],
-                self.barbican_api.CINDER_NODE_TYPE,
+                barbican.CINDER_NODE_TYPE,
                 data['node_ip'],
                 data['ssh_name'],
                 data['ssh_pwd'],
@@ -431,7 +431,7 @@ class EditCinderNode(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             node = self.barbican_api.get_node(
-                node_name, self.barbican_api.CINDER_NODE_TYPE)
+                node_name, barbican.CINDER_NODE_TYPE)
 
             node_name_field.initial = node['node_name']
 
@@ -481,7 +481,7 @@ class EditCinderNode(forms.SelfHandlingForm):
             if form_data['ssh_pwd'] != form_data['confirm_password']:
                 raise ValidationError(_('Passwords do not match.'))
 
-        form_data['service_type'] = self.barbican_api.CINDER_NODE_TYPE
+        form_data['service_type'] = barbican.CINDER_NODE_TYPE
         return form_data
 
     def handle(self, request, data):
@@ -491,11 +491,11 @@ class EditCinderNode(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.barbican_api.delete_node(
                 self.fields['node_name'].initial,
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
 
             self.barbican_api.add_node(
                 data['node_name'],
-                self.barbican_api.CINDER_NODE_TYPE,
+                barbican.CINDER_NODE_TYPE,
                 data['node_ip'],
                 data['ssh_name'],
                 data['ssh_pwd'],
@@ -529,7 +529,7 @@ class ValidateCinderNode(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.node = self.barbican_api.get_node(
                 node_name,
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
 
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -542,7 +542,7 @@ class ValidateCinderNode(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             run_ssh_validation_test(self.node,
-                                    self.barbican_api.CINDER_NODE_TYPE,
+                                    barbican.CINDER_NODE_TYPE,
                                     self.barbican_api)
             messages.success(request, _('SSH credentials test completed'))
             return True
@@ -571,7 +571,7 @@ class ValidateAllCinderNodes(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.CINDER_NODE_TYPE)
+                barbican.CINDER_NODE_TYPE)
 
             names = ""
             for node in self.nodes:
@@ -595,7 +595,7 @@ class ValidateAllCinderNodes(forms.SelfHandlingForm):
 
             for node in self.nodes:
                 run_ssh_validation_test(node,
-                                        self.barbican_api.CINDER_NODE_TYPE,
+                                        barbican.CINDER_NODE_TYPE,
                                         self.barbican_api)
 
             messages.success(request, _('All SSH credential tests completed'))
@@ -643,7 +643,7 @@ class RegisterNovaNode(forms.SelfHandlingForm):
             if data['ssh_pwd'] != data['confirm_password']:
                 raise ValidationError(_('Passwords do not match.'))
 
-        data['service_type'] = self.barbican_api.NOVA_NODE_TYPE
+        data['service_type'] = barbican.NOVA_NODE_TYPE
         return data
 
     def handle(self, request, data):
@@ -652,7 +652,7 @@ class RegisterNovaNode(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.barbican_api.add_node(
                 data['node_name'],
-                self.barbican_api.NOVA_NODE_TYPE,
+                barbican.NOVA_NODE_TYPE,
                 data['node_ip'],
                 data['ssh_name'],
                 data['ssh_pwd'])
@@ -707,7 +707,7 @@ class EditNovaNode(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             node = self.barbican_api.get_node(
-                node_name, self.barbican_api.NOVA_NODE_TYPE)
+                node_name, barbican.NOVA_NODE_TYPE)
 
             node_name_field.initial = node['node_name']
 
@@ -750,7 +750,7 @@ class EditNovaNode(forms.SelfHandlingForm):
             if form_data['ssh_pwd'] != form_data['confirm_password']:
                 raise ValidationError(_('Passwords do not match.'))
 
-        form_data['service_type'] = self.barbican_api.NOVA_NODE_TYPE
+        form_data['service_type'] = barbican.NOVA_NODE_TYPE
         return form_data
 
     def handle(self, request, data):
@@ -760,11 +760,11 @@ class EditNovaNode(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.barbican_api.delete_node(
                 self.fields['node_name'].initial,
-                self.barbican_api.NOVA_NODE_TYPE)
+                barbican.NOVA_NODE_TYPE)
 
             self.barbican_api.add_node(
                 data['node_name'],
-                self.barbican_api.NOVA_NODE_TYPE,
+                barbican.NOVA_NODE_TYPE,
                 data['node_ip'],
                 data['ssh_name'],
                 data['ssh_pwd'])
@@ -798,7 +798,7 @@ class ValidateNovaNode(forms.SelfHandlingForm):
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.node = self.barbican_api.get_node(
                 node_name,
-                self.barbican_api.NOVA_NODE_TYPE)
+                barbican.NOVA_NODE_TYPE)
 
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -811,7 +811,7 @@ class ValidateNovaNode(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             run_ssh_validation_test(self.node,
-                                    self.barbican_api.NOVA_NODE_TYPE,
+                                    barbican.NOVA_NODE_TYPE,
                                     self.barbican_api)
             messages.success(request, _('SSH credentials test completed'))
             return True
@@ -840,7 +840,7 @@ class ValidateAllNovaNodes(forms.SelfHandlingForm):
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
             self.nodes = self.barbican_api.get_all_nodes(
-                self.barbican_api.NOVA_NODE_TYPE)
+                barbican.NOVA_NODE_TYPE)
 
             names = ""
             for node in self.nodes:
@@ -864,7 +864,7 @@ class ValidateAllNovaNodes(forms.SelfHandlingForm):
 
             for node in self.nodes:
                 run_ssh_validation_test(node,
-                                        self.barbican_api.NOVA_NODE_TYPE,
+                                        barbican.NOVA_NODE_TYPE,
                                         self.barbican_api)
 
             messages.success(request, _('All SSH credential tests completed'))

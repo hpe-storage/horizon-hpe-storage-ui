@@ -40,9 +40,9 @@ class SSHTestResultsColumn(tables.Column):
         if 'validation_time' in node:
             results = node['validation_time']
             if results == 'Failed':
-                results = '<font color="red">Failed</font>'
+                results = '<font color="red">FAIL</font>'
             else:
-                results = '<font color="green">Passed</font>'
+                results = '<font color="green">PASS</font>'
             return safestring.mark_safe(results)
         else:
             return "-- Not Yet Run --"
@@ -57,46 +57,21 @@ class DiagConfigTestResultsColumn(tables.Column):
            elif 'diag_test_status' in node and 'software_test_status' in node:
                if ":fail:" in node['diag_test_status'] or \
                        ":fail" in node['software_test_status']:
-                   result_str = '<font color="red">Failed </font>'
+                   result_str = '<font color="red">FAIL </font>'
                else:
-                   result_str = '<font color="green">Passed </font>'
+                   result_str = '<font color="green">PASS </font>'
 
                node_name = node['node_name'] + "::" + \
                            node['node_type']
                url = reverse("horizon:admin:hpe_storage:diags:" + \
-                             "test_detail",
+                             "cinder_test_detail",
                              args=(node_name,)) + \
-                             "test_details"
+                             "cinder_test_details"
                # link = '<a href="%s">%s</a>' % (url, run_time)
                link = '%s <a href="%s">(details)</a>' % (result_str, url)
                return safestring.mark_safe(link)
 
        return "N/A"
-
-
-class DiagSoftwareTestResultsColumn(tables.Column):
-    # Customized column class.
-    def get_raw_data(self, node):
-       if 'diag_run_time' in node:
-           if node['validation_time'] == 'Failed':
-               return "N/A"
-           else:
-               if ":fail:" in node['software_test_status']:
-                   result_str = '<font color="red">Failed </font>'
-               else:
-                   result_str = '<font color="green">Passed </font>'
-
-               node_name = node['node_name'] + "::" + \
-                           node['node_type']
-               url = reverse("horizon:admin:hpe_storage:diags:" + \
-                             "software_test_detail",
-                             args=(node_name,)) + \
-                             "software_test_details"
-               # link = '<a href="%s">%s</a>' % (url, run_time)
-               link = '%s <a href="%s">(details)</a>' % (result_str, url)
-               return safestring.mark_safe(link)
-       else:
-           return "N/A"
 
 
 class RunAllCinderDiagsAction(tables.LinkAction):
@@ -111,7 +86,7 @@ class RunAllCinderDiagsAction(tables.LinkAction):
         self.keystone_api.do_setup(request)
         self.barbican_api.do_setup(self.keystone_api.get_session())
         return self.barbican_api.nodes_exist(
-            self.barbican_api.CINDER_NODE_TYPE)
+            barbican.CINDER_NODE_TYPE)
 
 
 class RunCinderDiagsAction(tables.LinkAction):
@@ -139,9 +114,6 @@ class CinderNodeTable(tables.DataTable):
     cinder_results = DiagConfigTestResultsColumn(
         'cinder_results',
         verbose_name=_('Diagnostic Test'))
-    # software_results = DiagSoftwareTestResultsColumn(
-    #     'software_results',
-    #     verbose_name=_('Software Test'))
 
     def get_object_id(self, node):
         return node['node_name']
@@ -166,7 +138,7 @@ class RunAllNovaDiagsAction(tables.LinkAction):
         self.keystone_api.do_setup(request)
         self.barbican_api.do_setup(self.keystone_api.get_session())
         return self.barbican_api.nodes_exist(
-            self.barbican_api.NOVA_NODE_TYPE)
+            barbican.NOVA_NODE_TYPE)
 
 
 class RunNovaDiagsAction(tables.LinkAction):
@@ -177,6 +149,35 @@ class RunNovaDiagsAction(tables.LinkAction):
 
     def get_link_url(self, node):
         return reverse(self.url, args=[node['node_name']])
+
+
+class DiagSoftwareTestResultsColumn(tables.Column):
+    # Customized column class.
+    def get_raw_data(self, node):
+       if 'diag_run_time' in node:
+           if node['validation_time'] == 'Failed':
+               return "N/A"
+           elif 'software_test_status' in node:
+               if ":fail:" in node['software_test_status']:
+                   result_str = '<font color="red">FAIL </font>'
+               else:
+                   result_str = '<font color="green">PASS </font>'
+
+               node_name = node['node_name'] + "::" + \
+                           node['node_type']
+               url = reverse("horizon:admin:hpe_storage:diags:" + \
+                             "nova_test_detail",
+                             args=(node_name,)) + \
+                             "nova_test_details"
+               # url = reverse("horizon:admin:hpe_storage:diags:" + \
+               #               "software_test_detail",
+               #               args=(node_name,)) + \
+               #               "software_test_details"
+               # link = '<a href="%s">%s</a>' % (url, run_time)
+               link = '%s <a href="%s">(details)</a>' % (result_str, url)
+               return safestring.mark_safe(link)
+       else:
+           return "N/A"
 
 
 class NovaNodeTable(tables.DataTable):

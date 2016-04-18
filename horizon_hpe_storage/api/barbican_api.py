@@ -19,11 +19,12 @@ from barbicanclient import client as b_client
 import json
 import logging
 
+CINDER_NODE_TYPE = 'cinder'
+NOVA_NODE_TYPE = 'nova'
+
 LOG = logging.getLogger(__name__)
 class BarbicanAPI(object):
 
-    CINDER_NODE_TYPE = 'cinder'
-    NOVA_NODE_TYPE = 'nova'
     container_limit = 1000
     secret_limit = 50
 
@@ -223,3 +224,130 @@ class BarbicanAPI(object):
                                              **secret_list)
         node.store()
         return node
+
+    # Software Tests API
+    def _delete_software_test_container(self, type):
+        container = self._get_container('diag-software-tests-' + type)
+        if container and container.secrets:
+            # first delete all contained secrets
+            for name, secret in container.secrets.items():
+                self.client.secrets.delete(secret.secret_ref)
+
+            # now delete container
+            self.client.containers.delete(container.container_ref)
+
+    def _add_software_tests(self, type, tests):
+        test_data = {}
+        test_data['node_type'] = type
+        test_data['software_tests'] = tests
+
+        # store as json string
+        secrets = {}
+        test_data_str = json.dumps(test_data)
+        secret = self.client.secrets.create(
+            name="test_data",
+            payload=test_data_str)
+        secrets['test_data'] = secret
+
+        # create container
+        secret_list = {}
+        secret_list['secrets'] = secrets
+        test_name = 'diag-software-tests-' + type
+        test = self.client.containers.create(test_name,
+                                             **secret_list)
+        test.store()
+        return test
+
+    def get_software_tests(self, type):
+        test_data = {}
+        container  = self._get_container('diag-software-tests-' + type)
+        if container:
+            srefs = container.secret_refs
+            for key, value in srefs.items():
+                data_str = self.client.secrets.get(value).payload
+                data = json.loads(data_str)
+                if 'software_tests' in data:
+                    return data["software_tests"]
+        else:
+            # if no container exists, we are creating the first test, so
+            # seed with some standard tests
+            tests = []
+            software_pkg = {}
+            software_pkg['package'] = 'sg3-utils || sg3_utils'
+            software_pkg['min_version'] = '1.3'
+            software_pkg['description'] = 'required for attaching FC volumes'
+            tests.append(software_pkg)
+            software_pkg = {}
+            software_pkg['package'] = 'sysfsutils'
+            software_pkg['min_version'] = '2.1'
+            software_pkg['description'] = 'required for attaching FC volumes'
+            tests.append(software_pkg)
+
+            if type == CINDER_NODE_TYPE:
+                software_pkg = {}
+                software_pkg['package'] = 'python-3parclient'
+                software_pkg['min_version'] = '4.2.0'
+                software_pkg['description'] = 'required for accessing HPE 3PAR array'
+                tests.append(software_pkg)
+            self._add_software_tests(type, tests)
+            return tests
+
+        return None
+
+    def update_software_test(self, type, software_pkg,
+                             min_version, description):
+        # just update the one package
+        new_tests = []
+        curr_tests = self.get_software_tests(type)
+        if curr_tests:
+            for curr_test in curr_tests:
+                if curr_test['package'] == software_pkg:
+                    test = {}
+                    test['package'] = software_pkg
+                    test['min_version'] = min_version
+                    test['description'] = description
+                    new_tests.append(test)
+                else:
+                    new_tests.append(curr_test)
+
+            # delete the old tests
+            self._delete_software_test_container(type)
+
+            self._add_software_tests(type, new_tests)
+
+    def add_software_test(self, type, software_pkg,
+                          min_version, description):
+        tests = []
+
+        curr_tests = self.get_software_tests(type)
+        if curr_tests:
+            tests = curr_tests
+            # delete the old tests
+            self._delete_software_test_container(type)
+
+        new_test = {}
+        new_test['package'] = software_pkg
+        new_test['min_version'] = min_version
+        new_test['description'] = description
+        tests.append(new_test)
+
+        return self._add_software_tests(type, tests)
+
+    def delete_software_test(self, type, software_pkg):
+        # can't update, so delete current tests and add back new
+        curr_tests = self.get_software_tests(type)
+        self._delete_software_test_container(type)
+
+        new_tests = []
+        for test in curr_tests:
+            if test['package'] != software_pkg:
+                new_tests.append(test)
+
+        self._add_software_tests(type, new_tests)
+
+    def delete_all_software_tests(self, type):
+        # can't update, so delete all old and add back empty list
+        self._delete_software_test_container(type)
+        new_tests = []
+        self._add_software_tests(type, new_tests)
+

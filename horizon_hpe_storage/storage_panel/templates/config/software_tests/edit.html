@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Edit Software Package" %}{% endblock %}
+
+{% block page_header %}
+  <h2>
+    {% block modal-header %}{% blocktrans %}Software Tests for All {{ package }} Nodes{% endblocktrans %}{% endblock %}
+  </h2>
+{% endblock page_header %}
+
+{% block main %}
+    {% include "config/software_tests/_edit.html" %}
+{% endblock %}

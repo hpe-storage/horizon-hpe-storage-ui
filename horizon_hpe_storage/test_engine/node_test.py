@@ -54,13 +54,13 @@ class NodeTest():
                 else:
                     self.test_result_text += line
 
-    def run_credentials_check_test(self, test_data):
+    def run_credentials_check_test(self, conf_data):
         self.errors_occurred = False
         self.error_text = ''
         self.test_result_text = ''
         self.io_q = Queue()
         self.proc = Popen(['cinderdiags', 'ssh-credentials-check', '-f', 'json',
-                           '-conf-data', test_data],
+                           '-conf-data', conf_data],
                           stdout=PIPE,
                           stderr=PIPE)
         Thread(target=self.stream_watcher, name='stdout-watcher',
@@ -76,13 +76,13 @@ class NodeTest():
                 done = True
 
 
-    def run_options_check_test(self, test_data):
+    def run_options_check_test(self, conf_data):
         self.errors_occurred = False
         self.error_text = ''
         self.test_result_text = ''
         self.io_q = Queue()
         self.proc = Popen(['cinderdiags', '-v', 'options-check', '-f', 'json',
-                           '-conf-data', test_data, '-incl-system-info'],
+                           '-conf-data', conf_data, '-incl-system-info'],
                           stdout=PIPE,
                           stderr=PIPE)
         Thread(target=self.stream_watcher, name='stdout-watcher',
@@ -98,13 +98,14 @@ class NodeTest():
                 done = True
 
 
-    def run_software_check_test(self, test_data):
+    def run_software_check_test(self, conf_data, software_test_data):
         self.errors_occurred = False
         self.error_text = ''
         self.test_result_text = ''
         self.io_q = Queue()
         self.proc = Popen(['cinderdiags', '-v', 'software-check', '-f', 'json',
-                           '-conf-data', test_data],
+                           '-conf-data', conf_data,
+                           '-software-pkgs', software_test_data],
                           stdout=PIPE,
                           stderr=PIPE)
         Thread(target=self.stream_watcher, name='stdout-watcher',
