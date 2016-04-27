@@ -31,6 +31,7 @@ from horizon_hpe_storage.storage_panel import tabs as storage_tabs
 import uuid
 import base64
 import re
+import time
 from urlparse import urlparse
 
 import horizon_hpe_storage.api.hp_ssmc_api as hpssmc
@@ -94,6 +95,8 @@ class BaseLinkView(forms.ModalFormView):
     barbican_api = barbican.BarbicanAPI()
     ssmc_api = None
 
+    tokens = {}
+
     def get_3par_vol_name(self, id):
         uuid_str = id.replace("-", "")
         vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
@@ -105,6 +108,12 @@ class BaseLinkView(forms.ModalFormView):
         # strip off the == as 3par doesn't like those.
         vol_encoded = vol_encoded.replace('=', '')
         return "osv-%s" % vol_encoded
+
+    def get_cache_value(self, key):
+        if key in self.tokens:
+            return self.tokens[key]
+        else:
+            return None
 
     def get_SSMC_endpoint(self, volume):
         self.keystone_api.do_setup(self.request)
@@ -122,7 +131,19 @@ class BaseLinkView(forms.ModalFormView):
 
         if endpt:
             # attempt to use previous token for the SSMC endpoint, if it exists
-            ssmc_token = cache.get('ssmc-link-' + self.host)
+            ssmc_instance = urlparse(endpt).netloc
+            ssmc_token = self.get_cache_value(
+                'ssmc-link-' + ssmc_instance)
+            ssmc_token_last_access_time = self.get_cache_value(
+                'ssmc-link-timer-' + ssmc_instance)
+
+            if ssmc_token:
+                # SSMC tokens last for 15 minutes (default)
+                # throw away token if older than 15 minutes since last access
+                cur_time = time.time()
+                session_timeout = 14 * 60 + 30     # 15 mins with fudge factor
+                if (cur_time - ssmc_token_last_access_time) > session_timeout:
+                    ssmc_token = None
 
             self.ssmc_api = hpssmc.HPSSMC(endpt, uname, pwd, ssmc_token)
             self.ssmc_api.do_setup(None)
@@ -133,7 +154,13 @@ class BaseLinkView(forms.ModalFormView):
 
             if self.ssmc_api.get_session_key():
                 self.ssmc_api.get_volume_info(volume.id)
-                cache.set('ssmc-link-' + self.host, self.ssmc_api.get_session_key())
+
+                if not ssmc_token:
+                    self.tokens['ssmc-link-' + ssmc_instance] = \
+                        self.ssmc_api.get_session_key()
+                    self.tokens['ssmc-link-timer-' + ssmc_instance] = \
+                        time.time()
+
                 return endpt
             else:
                 cache.delete('ssmc-link-' + self.host)

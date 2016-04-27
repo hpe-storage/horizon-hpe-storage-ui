@@ -44,7 +44,7 @@ class TestDescriptionTable(tables.DataTable):
 class BackendTestTable(tables.DataTable):
     backend = tables.Column(
         'backend_name',
-        verbose_name=_('Driver Config'),
+        verbose_name=_('Driver Configuration'),
         form_field=forms.CharField(max_length=64))
     credentials = tables.Column(
         'credentials',

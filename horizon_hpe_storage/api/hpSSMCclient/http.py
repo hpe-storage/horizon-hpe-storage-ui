@@ -40,20 +40,27 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
         """
         try:
-            # this prevens re-auth attempt if auth fails
+            # this prevents re-auth attempt if auth fails
             self.auth_try = 1
             self.session_key = None
 
             # first check if old token is still valid
             if token is not None:
+                LOG.info("####### 1-check if SSMC Token is valid: %s\n", token)
                 header = {'Authorization': token}
-                resp, body = self.get('/foundation/REST/sessionservice/sessions/' + token, headers=header)
-                if body and 'availableSystems' in body:
+                try:
+                    resp, body = self.get(
+                        '/foundation/REST/sessionservice/sessions/' + token + '/context',
+                        headers=header)
+                    LOG.info("####### 2-SSMC Token is valid: %s\n", token)
                     self.auth_try = 0
                     self.user = user
                     self.password = password
                     self.session_key = token
                     return
+                except Exception as ex:
+                    # token has expired
+                    token = None
 
             info = {'username': user,
                     'password': password,
@@ -65,11 +72,17 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                 self._auth_optional = optional
                 info.update(optional)
 
+            LOG.info("####### 3-request new token\n")
             resp, body = self.post('/foundation/REST/sessionservice/sessions', body=info)
             if body and 'object' in body:
                 object = body['object']
                 if object and 'Authorization' in object:
                     self.session_key = object['Authorization']
+
+            if self.session_key:
+                LOG.info("####### 4-our new token: %s\n", self.session_key)
+            else:
+                LOG.info("####### 4-our new token: NONE\n")
 
             self.auth_try = 0
             self.user = user

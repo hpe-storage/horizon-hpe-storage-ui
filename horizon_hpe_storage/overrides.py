@@ -64,13 +64,14 @@ class BaseElementManager(tables.LinkAction):
         if volume:
             host = getattr(volume, 'os-vol-host-attr:host', None)
             # pull out host from host name (comes between @ and #)
-            found = re.search('@(.+?)#', host)
-            if found:
-                backend = found.group(1)
-                endpoints = self.get_deep_link_endpoints(request)
-                for endpoint in endpoints:
-                    if endpoint['backend'] == backend:
-                        return True
+            if host:
+                found = re.search('@(.+?)#', host)
+                if found:
+                    backend = found.group(1)
+                    endpoints = self.get_deep_link_endpoints(request)
+                    for endpoint in endpoints:
+                        if endpoint['backend'] == backend:
+                            return True
 
         return False
 
