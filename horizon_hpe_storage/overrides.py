@@ -16,6 +16,8 @@ from django.utils.translation import ugettext_lazy as _
 from horizon import tables
 from openstack_dashboard.dashboards.admin.volumes.volumes import tables \
     as volumes_tables
+from openstack_dashboard.dashboards.admin.volumes.snapshots import tables \
+    as snapshots_tables
 from openstack_dashboard.dashboards.admin.volumes import tabs
 
 from django.core.urlresolvers import reverse
@@ -31,7 +33,7 @@ LOG = logging.getLogger(__name__)
 # every volume in the volume table
 keystone_api = None
 
-class BaseElementManager(tables.LinkAction):
+class VolumeBaseElementManager(tables.LinkAction):
     # launch in new window
     attrs = {"target": "_blank"}
     policy_rules = (("volume", "volume:deep_link"),)
@@ -76,25 +78,25 @@ class BaseElementManager(tables.LinkAction):
         return False
 
 
-class LaunchElementManagerVolume(BaseElementManager):
+class VolumeLaunchElementManagerVolume(VolumeBaseElementManager):
     LOG.info(("Deep Link - launch element manager volume"))
     name = "link_volume"
     verbose_name = _("View Volume in HPE 3PAR SSMC")
     url = "horizon:admin:hpe_storage:config:link_to_volume"
 
 
-class LaunchElementManagerCPG(BaseElementManager):
-    LOG.info(("Deep Link - launch element manager CPG"))
-    name = "link_cpg"
+class VolumeLaunchElementManagerCPG(VolumeBaseElementManager):
+    LOG.info(("Deep Link - launch element manager volume CPG"))
+    name = "link_volume_cpg"
     verbose_name = _("View Volume CPG in HPE 3PAR SSMC")
-    url = "horizon:admin:hpe_storage:config:link_to_cpg"
+    url = "horizon:admin:hpe_storage:config:link_to_volume_cpg"
 
 
-class LaunchElementManagerDomain(BaseElementManager):
-    LOG.info(("Deep Link - launch element manager domain"))
-    name = "link_domain"
+class VolumeLaunchElementManagerDomain(VolumeBaseElementManager):
+    LOG.info(("Deep Link - launch element manager volume domain"))
+    name = "link_volume_domain"
     verbose_name = _("View Volume Domain in HPE 3PAR SSMC")
-    url = "horizon:admin:hpe_storage:config:link_to_domain"
+    url = "horizon:admin:hpe_storage:config:link_to_volume_domain"
 
 
 class VolumesTableWithLaunch(volumes_tables.VolumesTable):
@@ -103,9 +105,77 @@ class VolumesTableWithLaunch(volumes_tables.VolumesTable):
     class Meta(volumes_tables.VolumesTable.Meta):
         # Add the extra action to the end of the row actions
         row_actions = volumes_tables.VolumesTable.Meta.row_actions + \
-                      (LaunchElementManagerVolume,
-                       LaunchElementManagerCPG,
-                       LaunchElementManagerDomain)
+                      (VolumeLaunchElementManagerVolume,
+                       VolumeLaunchElementManagerCPG,
+                       VolumeLaunchElementManagerDomain)
+
+
+class SnapshotBaseElementManager(tables.LinkAction):
+    # launch in new window
+    attrs = {"target": "_blank"}
+    policy_rules = (("volume", "volume:deep_link"),)
+
+    def get_link_url(self, snapshot):
+        link_url = reverse(self.url, args=[snapshot.id])
+        return link_url
+
+    def get_deep_link_endpoints(self, request):
+        global keystone_api
+        endpoints = []
+        for i in range(0,2):
+            try:
+                if not keystone_api:
+                    keystone_api = keystone.KeystoneAPI()
+                    keystone_api.do_setup(request)
+
+                endpoints = keystone_api.get_ssmc_endpoints()
+                return endpoints
+            except Exception as ex:
+                # try again, as this may be due to expired keystone session
+                keystone_api = None
+                continue
+
+        return endpoints
+
+    def allowed(self, request, snapshot=None):
+        # don't allow deep link option if this snapshot
+        # is associated with a consistency group (because we
+        # can't determine the full 3PAR name)
+        if snapshot._volume.consistencygroup_id:
+            return False
+
+        # don't allow deep link option if snapshot is not tied
+        # to an SSMC endpoint
+        if snapshot.host_name:
+            # pull out host from host name (comes between @ and #)
+            found = re.search('@(.+?)#', snapshot.host_name)
+            if found:
+                backend = found.group(1)
+                endpoints = self.get_deep_link_endpoints(request)
+                for endpoint in endpoints:
+                    if endpoint['backend'] == backend:
+                        return True
+
+        return False
+
+
+class SnapshotLaunchElementManagerVolume(SnapshotBaseElementManager):
+    LOG.info(("Deep Link - launch element manager snapshot"))
+    name = "link_snapshot"
+    verbose_name = _("View Snapshot in HPE 3PAR SSMC")
+    url = "horizon:admin:hpe_storage:config:link_to_snapshot"
+
+
+class SnapshotsTableWithLaunch(snapshots_tables.VolumeSnapshotsTable):
+    """ Extend the VolumeSnapshotsTable by adding the new row action
+    """
+    class Meta(snapshots_tables.VolumeSnapshotsTable.Meta):
+        # Add the extra action to the end of the row actions
+        row_actions = \
+            snapshots_tables.VolumeSnapshotsTable.Meta.row_actions + \
+            (SnapshotLaunchElementManagerVolume,)
 
 # Replace the standard Volumes table with this extended version
 tabs.VolumeTab.table_classes = (VolumesTableWithLaunch,)
+# Replace the standard Volumes table with this extended version
+tabs.SnapshotTab.table_classes = (SnapshotsTableWithLaunch,)

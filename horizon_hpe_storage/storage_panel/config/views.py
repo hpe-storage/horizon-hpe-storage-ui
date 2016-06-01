@@ -97,25 +97,13 @@ class BaseLinkView(forms.ModalFormView):
 
     tokens = {}
 
-    def get_3par_vol_name(self, id):
-        uuid_str = id.replace("-", "")
-        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
-        vol_encoded = base64.b64encode(vol_uuid.bytes)
-
-        # 3par doesn't allow +, nor /
-        vol_encoded = vol_encoded.replace('+', '.')
-        vol_encoded = vol_encoded.replace('/', '-')
-        # strip off the == as 3par doesn't like those.
-        vol_encoded = vol_encoded.replace('=', '')
-        return "osv-%s" % vol_encoded
-
     def get_cache_value(self, key):
         if key in self.tokens:
             return self.tokens[key]
         else:
             return None
 
-    def get_SSMC_endpoint(self, volume):
+    def get_SSMC_endpoint(self, volume, snapshot=None):
         self.keystone_api.do_setup(self.request)
         self.barbican_api.do_setup(self.keystone_api.get_session())
 
@@ -153,7 +141,12 @@ class BaseLinkView(forms.ModalFormView):
             self.ssmc_api.client_login()
 
             if self.ssmc_api.get_session_key():
-                self.ssmc_api.get_volume_info(volume.id)
+                if snapshot:
+                    snapshot_id = getattr(snapshot, "id")
+                    self.ssmc_api.get_snapshot_info(snapshot_id)
+                else:
+                    volume_id = getattr(volume, "id")
+                    self.ssmc_api.get_volume_info(volume_id)
 
                 if not ssmc_token:
                     self.tokens['ssmc-link-' + ssmc_instance] = \
@@ -195,9 +188,10 @@ class LinkVolumeView(BaseLinkView):
             volume_id = self.kwargs['volume_id']
             volume = cinder.volume_get(self.request, volume_id)
 
-            volume_name = self.get_3par_vol_name(volume_id)
-            LOG.info(("deep link - get keystone token for vol = %s") % volume_name)
-            formatted_vol_name = format(volume_name)
+            # volume_name = self.get_3par_vol_name(volume_id)
+            # LOG.info(("deep link - get keystone token for vol = %s") % volume_name)
+            # formatted_vol_name = format(volume_name)
+            LOG.info(("deep link - get keystone token for vol = %s") % volume.name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
@@ -256,9 +250,7 @@ class LinkVolumeCPGView(BaseLinkView):
             volume_id = self.kwargs['volume_id']
             volume = cinder.volume_get(self.request, volume_id)
 
-            volume_name = self.get_3par_vol_name(volume_id)
-            LOG.info(("deep link - get keystone token for vol = %s") % volume_name)
-            formatted_vol_name = format(volume_name)
+            LOG.info(("deep link - get keystone token for vol = %s") % volume.name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
@@ -313,9 +305,7 @@ class LinkVolumeDomainView(BaseLinkView):
             volume_id = self.kwargs['volume_id']
             volume = cinder.volume_get(self.request, volume_id)
 
-            volume_name = self.get_3par_vol_name(volume_id)
-            LOG.info(("deep link - get keystone token for vol = %s") % volume_name)
-            formatted_vol_name = format(volume_name)
+            LOG.info(("deep link - get keystone token for vol = %s") % volume.name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
@@ -348,6 +338,68 @@ class LinkVolumeDomainView(BaseLinkView):
         volume, link_url = self.get_data()
         return {'volume_id': self.kwargs["volume_id"],
                 'name': volume.name,
+                'link_url': link_url}
+
+
+class LinkSnapshotView(BaseLinkView):
+    submit_url = 'horizon:admin:hpe_storage:config:link_to_snapshot'
+
+    def get_context_data(self, **kwargs):
+        context = super(LinkSnapshotView, self).get_context_data(**kwargs)
+        args = (self.kwargs['snapshot_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        context['link_url'] = kwargs['form'].initial['link_url']
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            # from openstack_dashboard import policy
+            # allowed = policy.check((("volume","volume:create"),), self.request)
+            # allowed = policy.check((("volume","volume:crXXeate"),), self.request)
+            snapshot_id = self.kwargs['snapshot_id']
+            snapshot = cinder.volume_snapshot_get(self.request, snapshot_id)
+
+            volume_id = snapshot.volume_id
+            volume = cinder.volume_get(self.request, volume_id)
+
+            LOG.info(("deep link - get keystone token for snapshot = %s") % snapshot.name)
+
+            # get volume data to build URI to SSMC
+            endpoint = self.get_SSMC_endpoint(volume, snapshot)
+            LOG.info(("deep-link - Session Token = %s") % self.ssmc_api.get_session_key())
+            if endpoint:
+                # "0:url=" is needed for redirect tag for page
+                # url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
+                #         'capacity/r/provisioning/REST/volumeviewservice/' \
+                #         'systems/' + self.ssmc_api.get_system_wwn() + \
+                #         '/volumes/' + self.ssmc_api.get_volume_id() + \
+                #         '?sessionToken=' + self.ssmc_api.get_session_key()
+                ref = urlparse(self.ssmc_api.get_volume_ref())
+                url = "0;url=" + endpoint + \
+                      '#/virtual-volumes/show/capacity/r' + \
+                        ref.path + '?sessionToken=' + self.ssmc_api.get_session_key()
+
+                # USE if we want user to log in every time
+                # self.logout_SSMC_session()
+                LOG.info(("deep-link - SSMC URL = %s") % url)
+                return snapshot, url
+
+        except ValueError as err:
+            url = reverse('horizon:admin:volumes:volumes_tab')
+            exceptions.handle(self.request,
+                              err.message,
+                              redirect=url)
+        except Exception as err:
+            LOG.info(("deep-link error = %s") % err.message)
+            exceptions.handle(self.request,
+                              _('Unable to retrieve volume details.'),
+                              redirect=self.success_url)
+
+    def get_initial(self):
+        snapshot, link_url = self.get_data()
+        return {'snapshot_id': self.kwargs["snapshot_id"],
+                'name': snapshot.name,
                 'link_url': link_url}
 
 

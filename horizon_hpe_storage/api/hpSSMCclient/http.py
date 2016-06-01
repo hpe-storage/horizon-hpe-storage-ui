@@ -95,7 +95,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         self.auth_try = 1
         info = {'Authorization': self.session_key}
         nn = "'%s'" % name
-        resp, body = self.get('/provisioning/REST/volumeviewservice/volumes?query=name+eq+' + nn, headers=info)
+        path = '/provisioning/REST/volumeviewservice/volumes?query=name+eq+' + nn
+        resp, body = self.get(path, headers=info)
         # resp, body = self.get("/provisioning/REST/volumeviewservice/volumes?query=name")
         if body and 'count' in body:
             count = body['count']

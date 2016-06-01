@@ -62,18 +62,6 @@ class HPSSMC(object):
             self.client.debug_rest(True)
 
     def _encode_name(self, name):
-        uuid_str = name.replace("-", "")
-        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
-        vol_encoded = base64.b64encode(vol_uuid.bytes)
-
-        # 3par doesn't allow +, nor /
-        vol_encoded = vol_encoded.replace('+', '.')
-        vol_encoded = vol_encoded.replace('/', '-')
-        # strip off the == as 3par doesn't like those.
-        vol_encoded = vol_encoded.replace('=', '')
-        return vol_encoded
-
-    def _get_3par_vol_name(self, volume_id):
         """Get converted 3PAR volume name.
 
         Converts the openstack volume id from
@@ -87,20 +75,42 @@ class HPSSMC(object):
 
         We strip the padding '=' and replace + with .
         and / with -
-        :rtype : object
         """
+
+        uuid_str = name.replace("-", "")
+        vol_uuid = uuid.UUID('urn:uuid:%s' % uuid_str)
+        vol_encoded = base64.b64encode(vol_uuid.bytes)
+
+        # 3par doesn't allow +, nor /
+        vol_encoded = vol_encoded.replace('+', '.')
+        vol_encoded = vol_encoded.replace('/', '-')
+        # strip off the == as 3par doesn't like those.
+        vol_encoded = vol_encoded.replace('=', '')
+        return vol_encoded
+
+    def _get_3par_vol_name(self, volume_id):
         volume_name = self._encode_name(volume_id)
         LOG.info(("3PAR Volume Name: osv-%s") % volume_name)
         return "osv-%s" % volume_name
+
+    def _get_3par_snapshot_name(self, snapshot_id):
+        snapshot_name = self._encode_name(snapshot_id)
+        LOG.info(("3PAR Volume Snapshot Name: oss-%s") % snapshot_name)
+        return "oss-%s" % snapshot_name
 
     def get_session_token(self):
         LOG.debug("Requesting Token from SSMC")
         return self.client.getSessionSSMCToken(self.ssmc_username,
                                                self.ssmc_passwd)
 
+    def get_snapshot_info(self, snapshot_id):
+        LOG.debug("   TOKEN = " + self.client.getSessionKey())
+        LOG.debug("Requesting SNAPSHOT LINK from SSMC")
+        self.client.getVolumeLink(self._get_3par_snapshot_name(snapshot_id))
+        LOG.debug("   href = " + self.client.getVolumeRef())
+
     def get_volume_info(self, volume_id):
         LOG.debug("   TOKEN = " + self.client.getSessionKey())
-
         LOG.debug("Requesting VOLUME LINK from SSMC")
         self.client.getVolumeLink(self._get_3par_vol_name(volume_id))
         LOG.debug("   href = " + self.client.getVolumeRef())
