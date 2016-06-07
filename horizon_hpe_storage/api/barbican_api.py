@@ -23,8 +23,9 @@ CINDER_NODE_TYPE = 'cinder'
 NOVA_NODE_TYPE = 'nova'
 
 LOG = logging.getLogger(__name__)
-class BarbicanAPI(object):
 
+
+class BarbicanAPI(object):
     container_limit = 1000
     secret_limit = 50
 
@@ -63,7 +64,6 @@ class BarbicanAPI(object):
             if secret.name == secret_name:
                 return secret
         return None
-
 
     # SSMC link functions
     def get_ssmc_credentials(self, cinder_backend):
@@ -105,11 +105,10 @@ class BarbicanAPI(object):
         self.delete_ssmc_credentials(cinder_backend)
         self.add_ssmc_credentials(cinder_backend, uname, pwd)
 
-
     # Cinder/Nova node registration and diagnostics functions
     def get_node(self, name, type):
         node_data = {}
-        container  = self._get_container(type + '-cinderdiags-' + name)
+        container = self._get_container(type + '-cinderdiags-' + name)
         if container:
             srefs = container.secret_refs
             for key, value in srefs.items():
@@ -167,7 +166,7 @@ class BarbicanAPI(object):
         return nodes
 
     def delete_node(self, name, type):
-        container  = self._get_container(type + '-cinderdiags-' + name)
+        container = self._get_container(type + '-cinderdiags-' + name)
         if container and container.secrets:
             # first delete all contained secrets
             for name, secret in container.secrets.items():
@@ -260,7 +259,7 @@ class BarbicanAPI(object):
 
     def get_software_tests(self, type):
         test_data = {}
-        container  = self._get_container('diag-software-tests-' + type)
+        container = self._get_container('diag-software-tests-' + type)
         if container:
             srefs = container.secret_refs
             for key, value in srefs.items():
@@ -275,19 +274,22 @@ class BarbicanAPI(object):
             software_pkg = {}
             software_pkg['package'] = 'sg3-utils || sg3_utils'
             software_pkg['min_version'] = '1.3'
-            software_pkg['description'] = 'required for attaching FC volumes'
+            software_pkg['description'] = \
+                'required for attaching FC volumes'
             tests.append(software_pkg)
             software_pkg = {}
             software_pkg['package'] = 'sysfsutils'
             software_pkg['min_version'] = '2.1'
-            software_pkg['description'] = 'required for attaching FC volumes'
+            software_pkg['description'] = \
+                'required for attaching FC volumes'
             tests.append(software_pkg)
 
             if type == CINDER_NODE_TYPE:
                 software_pkg = {}
                 software_pkg['package'] = 'python-3parclient'
                 software_pkg['min_version'] = '4.2.0'
-                software_pkg['description'] = 'required for accessing HPE 3PAR array'
+                software_pkg['description'] = \
+                    'required for accessing HPE 3PAR array'
                 tests.append(software_pkg)
             self._add_software_tests(type, tests)
             return tests
@@ -350,4 +352,3 @@ class BarbicanAPI(object):
         self._delete_software_test_container(type)
         new_tests = []
         self._add_software_tests(type, new_tests)
-

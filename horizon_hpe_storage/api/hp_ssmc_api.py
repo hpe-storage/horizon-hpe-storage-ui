@@ -21,6 +21,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+
 class HPSSMC(object):
 
     def __init__(self, endpt, username, password, token):
@@ -46,7 +47,6 @@ class HPSSMC(object):
                               self.ssmc_token)
         except Exception:
             LOG.error("Can't LOG IN")
-
 
     def client_logout(self):
         LOG.info(("Disconnect from SSMC REST %s") % self.uuid)
@@ -98,6 +98,11 @@ class HPSSMC(object):
         LOG.info(("3PAR Volume Snapshot Name: oss-%s") % snapshot_name)
         return "oss-%s" % snapshot_name
 
+    def _get_3par_cgroup_name(self, cgroup_id):
+        cgroup_name = self._encode_name(cgroup_id)
+        LOG.info(("3PAR Volume Snapshot Name: oss-%s") % cgroup_name)
+        return "vvs-%s" % cgroup_name
+
     def get_session_token(self):
         LOG.debug("Requesting Token from SSMC")
         return self.client.getSessionSSMCToken(self.ssmc_username,
@@ -107,6 +112,14 @@ class HPSSMC(object):
         LOG.debug("   TOKEN = " + self.client.getSessionKey())
         LOG.debug("Requesting SNAPSHOT LINK from SSMC")
         self.client.getVolumeLink(self._get_3par_snapshot_name(snapshot_id))
+        LOG.debug("   href = " + self.client.getVolumeRef())
+
+    def get_cgroup_info(self, cgroup_id):
+        LOG.debug("   TOKEN = " + self.client.getSessionKey())
+        LOG.debug("Requesting CONSISTENCY GROUP LINK from SSMC")
+        cgroup_name = self._get_3par_cgroup_name(cgroup_id)
+        # self.client.getCGroupLink(self._get_3par_cgroup_name(cgroup_id))
+        self.client.getCGroupLink(cgroup_name)
         LOG.debug("   href = " + self.client.getVolumeRef())
 
     def get_volume_info(self, volume_id):

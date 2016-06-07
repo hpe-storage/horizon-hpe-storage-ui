@@ -111,8 +111,10 @@ class CreateEndpoint(forms.SelfHandlingForm):
                 data['uname'],
                 data['pwd'])
 
-            messages.success(request, _('Successfully created SSMC Link '
-                                        'for Cinder backend: %s') % data['backend'])
+            messages.success(
+                request,
+                _('Successfully created SSMC Link for Cinder backend: %s') %
+                data['backend'])
             return True
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -216,10 +218,12 @@ class EditEndpoint(forms.SelfHandlingForm):
             new_endpoint_ip = data['endpoint_ip']
             new_endpoint_port = data['endpoint_port']
             if ((new_endpoint_ip != endpoint_ip_field.initial) or
-                (new_endpoint_port != endpoint_port_field.initial)):
+                    (new_endpoint_port != endpoint_port_field.initial)):
                 service_id = self.initial['service_id']
                 port = str(new_endpoint_port)
-                new_endpoint = 'https://' + data['endpoint_ip'] + ':' + port + '/'
+                new_endpoint = 'https://' + \
+                               data['endpoint_ip'] + \
+                               ':' + port + '/'
                 self.keystone_api.update_ssmc_endpoint_url(service_id,
                                                            new_endpoint)
 
@@ -241,8 +245,10 @@ class EditEndpoint(forms.SelfHandlingForm):
                     new_uname,
                     new_pwd)
 
-            messages.success(request, _('Successfully update SSMC Link '
-                                        'for Cinder backend: %s') % data['backend'])
+            messages.success(
+                request,
+                _('Successfully update SSMC Link for Cinder backend: %s') %
+                data['backend'])
             return True
         except Exception:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -253,7 +259,8 @@ class EditEndpoint(forms.SelfHandlingForm):
 
 class LinkToSSMC(forms.SelfHandlingForm):
     name = forms.CharField(max_length=255, label=_("Volume"),
-                           widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+                           widget=forms.TextInput(
+                               attrs={'readonly': 'readonly'}))
 
     def handle(self, request, data):
         try:
@@ -316,7 +323,7 @@ def run_ssh_validation_test(node, node_type, barbican_api):
         node['ssh_name'],
         node['ssh_pwd'],
         config_path=config_path,
-        ssh_validation_time= result)
+        ssh_validation_time=result)
 
 
 class RegisterCinderNode(forms.SelfHandlingForm):
@@ -346,7 +353,6 @@ class RegisterCinderNode(forms.SelfHandlingForm):
 
     keystone_api = keystone.KeystoneAPI()
     barbican_api = barbican.BarbicanAPI()
-
 
     def __init__(self, request, *args, **kwargs):
         super(forms.SelfHandlingForm, self).__init__(request, *args, **kwargs)
@@ -449,7 +455,9 @@ class EditCinderNode(forms.SelfHandlingForm):
                 ssh_pwd_field.initial = node['ssh_pwd']
             else:
                 ssh_pwd_field.initial = ''
-            ssh_pwd_field.widget.render_value = True  # this makes it show up initially
+
+            # this makes it show up initially
+            ssh_pwd_field.widget.render_value = True
 
             if 'config_path' in node:
                 config_path_field.initial = node['config_path']
@@ -501,7 +509,9 @@ class EditCinderNode(forms.SelfHandlingForm):
                 data['ssh_pwd'],
                 config_path=data['config_path'])
 
-            messages.success(request, _('Successfully updated Cinder node registration'))
+            messages.success(
+                request,
+                _('Successfully updated Cinder node registration'))
             return True
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -515,8 +525,7 @@ class ValidateCinderNode(forms.SelfHandlingForm):
         max_length=255,
         label=_("Cinder Node"),
         required=False,
-        widget=forms.TextInput(
-        attrs={'readonly': 'readonly'}))
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
 
     keystone_api = keystone.KeystoneAPI()
     barbican_api = barbican.BarbicanAPI()
@@ -549,8 +558,8 @@ class ValidateCinderNode(forms.SelfHandlingForm):
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
             exceptions.handle(request,
-                              _('Unable to run SSH credentials test: ') + ex.message,
-                              redirect=redirect)
+                              _('Unable to run SSH credentials test: ') +
+                              ex.message, redirect=redirect)
 
 
 class ValidateAllCinderNodes(forms.SelfHandlingForm):
@@ -603,8 +612,8 @@ class ValidateAllCinderNodes(forms.SelfHandlingForm):
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
             exceptions.handle(request,
-                              _('Unable to run SSH credentials test: ') + ex.message,
-                              redirect=redirect)
+                              _('Unable to run SSH credentials test: ') +
+                              ex.message, redirect=redirect)
 
 
 class RegisterNovaNode(forms.SelfHandlingForm):
@@ -631,7 +640,6 @@ class RegisterNovaNode(forms.SelfHandlingForm):
 
     keystone_api = keystone.KeystoneAPI()
     barbican_api = barbican.BarbicanAPI()
-
 
     def __init__(self, request, *args, **kwargs):
         super(forms.SelfHandlingForm, self).__init__(request, *args, **kwargs)
@@ -725,7 +733,9 @@ class EditNovaNode(forms.SelfHandlingForm):
                 ssh_pwd_field.initial = node['ssh_pwd']
             else:
                 ssh_pwd_field.initial = ''
-            ssh_pwd_field.widget.render_value = True  # this makes it show up initially
+
+            # this makes it show up initially
+            ssh_pwd_field.widget.render_value = True
 
         except Exception as ex:
             msg = _('Unable to retrieve Nova Node details.')
@@ -769,7 +779,9 @@ class EditNovaNode(forms.SelfHandlingForm):
                 data['ssh_name'],
                 data['ssh_pwd'])
 
-            messages.success(request, _('Successfully updated Nova node registration'))
+            messages.success(
+                request,
+                _('Successfully updated Nova node registration'))
             return True
         except Exception:
             redirect = reverse("horizon:admin:hpe_storage:index")
@@ -783,8 +795,7 @@ class ValidateNovaNode(forms.SelfHandlingForm):
         max_length=255,
         label=_("Nova Node"),
         required=False,
-        widget=forms.TextInput(
-        attrs={'readonly': 'readonly'}))
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
 
     keystone_api = keystone.KeystoneAPI()
     barbican_api = barbican.BarbicanAPI()
@@ -818,8 +829,8 @@ class ValidateNovaNode(forms.SelfHandlingForm):
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
             exceptions.handle(request,
-                              _('Unable to run SSH credentials test: ') + ex.message,
-                              redirect=redirect)
+                              _('Unable to run SSH credentials test: ') +
+                              ex.message, redirect=redirect)
 
 
 class ValidateAllNovaNodes(forms.SelfHandlingForm):
@@ -872,5 +883,5 @@ class ValidateAllNovaNodes(forms.SelfHandlingForm):
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
             exceptions.handle(request,
-                              _('Unable to run SSH credentials test: ') + ex.message,
-                              redirect=redirect)
+                              _('Unable to run SSH credentials test: ') +
+                              ex.message, redirect=redirect)

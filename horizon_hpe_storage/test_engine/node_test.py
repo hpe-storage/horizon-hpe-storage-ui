@@ -59,8 +59,8 @@ class NodeTest():
         self.error_text = ''
         self.test_result_text = ''
         self.io_q = Queue()
-        self.proc = Popen(['cinderdiags', 'ssh-credentials-check', '-f', 'json',
-                           '-conf-data', conf_data],
+        self.proc = Popen(['cinderdiags', 'ssh-credentials-check', '-f',
+                           'json', '-conf-data', conf_data],
                           stdout=PIPE,
                           stderr=PIPE)
         Thread(target=self.stream_watcher, name='stdout-watcher',
@@ -74,7 +74,6 @@ class NodeTest():
             time.sleep(2)
             if self.proc.stdout.closed and self.proc.stderr.closed:
                 done = True
-
 
     def run_options_check_test(self, conf_data):
         self.errors_occurred = False
@@ -96,7 +95,6 @@ class NodeTest():
             time.sleep(2)
             if self.proc.stdout.closed and self.proc.stderr.closed:
                 done = True
-
 
     def run_software_check_test(self, conf_data, software_test_data):
         self.errors_occurred = False

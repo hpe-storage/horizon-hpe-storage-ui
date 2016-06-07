@@ -70,9 +70,8 @@ class RunDiscoveryAction(tables.LinkAction):
 
 def get_pool_name(pool_name):
     try:
-        url = reverse("horizon:admin:hpe_storage:storage_arrays:" + \
-                      "pool_detail", args=(pool_name,)) + \
-                      "pool_details"
+        url = reverse("horizon:admin:hpe_storage:storage_arrays:" +
+                      "pool_detail", args=(pool_name,)) + "pool_details"
         pool = '<a href="%s">%s</a>' % (url, html.escape(pool_name))
     except NoReverseMatch:
         pool = html.escape(pool_name)
@@ -91,6 +90,7 @@ class PoolsColumn(tables.Column):
             pools.append(link % vals)
 
         return safestring.mark_safe("<br>".join(pools))
+
 
 class StorageArraysTable(tables.DataTable):
     system_name = tables.Column(

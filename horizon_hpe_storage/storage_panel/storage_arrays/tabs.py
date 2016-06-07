@@ -93,4 +93,3 @@ class SystemDetailTabs(tabs.TabGroup):
     # only show test results. System info has its own panel.
     # but keep around as example of having tabbed detail panel
     tabs = (OpenstackFeaturesTab, LicenseTab)
-

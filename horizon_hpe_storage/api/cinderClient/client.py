@@ -38,7 +38,6 @@ class CinderClient(object):
         """
         self.http.set_debug_flag(flag)
 
-
     def login(self, username, password, optional=None):
         """This authenticates against the service and creates a
            session.
@@ -61,7 +60,6 @@ class CinderClient(object):
 
         """
         self.http.unauthenticateKeystone()
-
 
     def getHostCapabilities(self, token, tenant_id, host):
         return self.http.getHostCapabilities(token, tenant_id, host)

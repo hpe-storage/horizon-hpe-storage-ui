@@ -49,29 +49,29 @@ class SSHTestResultsColumn(tables.Column):
 
 
 class DiagConfigTestResultsColumn(tables.Column):
-   # Customized column class.
-   def get_raw_data(self, node):
-       if 'diag_run_time' in node:
-           if node['validation_time'] == 'Failed':
-               return "N/A"
-           elif 'diag_test_status' in node and 'software_test_status' in node:
-               if ":fail:" in node['diag_test_status'] or \
-                       ":fail" in node['software_test_status']:
-                   result_str = '<font color="red">FAIL </font>'
-               else:
-                   result_str = '<font color="green">PASS </font>'
+    # Customized column class.
+    def get_raw_data(self, node):
+        if 'diag_run_time' in node:
+            if node['validation_time'] == 'Failed':
+                return "N/A"
+            elif 'diag_test_status' in node and 'software_test_status' in node:
+                if ":fail:" in node['diag_test_status'] or \
+                        ":fail" in node['software_test_status']:
+                    result_str = '<font color="red">FAIL </font>'
+                else:
+                    result_str = '<font color="green">PASS </font>'
 
-               node_name = node['node_name'] + "::" + \
-                           node['node_type']
-               url = reverse("horizon:admin:hpe_storage:diags:" + \
-                             "cinder_test_detail",
-                             args=(node_name,)) + \
-                             "cinder_test_details"
-               # link = '<a href="%s">%s</a>' % (url, run_time)
-               link = '%s <a href="%s">(details)</a>' % (result_str, url)
-               return safestring.mark_safe(link)
+                node_name = node['node_name'] + "::" + \
+                    node['node_type']
+                url = reverse(
+                    "horizon:admin:hpe_storage:diags:cinder_test_detail",
+                    args=(node_name,)) + \
+                    "cinder_test_details"
+                # link = '<a href="%s">%s</a>' % (url, run_time)
+                link = '%s <a href="%s">(details)</a>' % (result_str, url)
+                return safestring.mark_safe(link)
 
-       return "N/A"
+        return "N/A"
 
 
 class RunAllCinderDiagsAction(tables.LinkAction):
@@ -154,30 +154,30 @@ class RunNovaDiagsAction(tables.LinkAction):
 class DiagSoftwareTestResultsColumn(tables.Column):
     # Customized column class.
     def get_raw_data(self, node):
-       if 'diag_run_time' in node:
-           if node['validation_time'] == 'Failed':
-               return "N/A"
-           elif 'software_test_status' in node:
-               if ":fail:" in node['software_test_status']:
-                   result_str = '<font color="red">FAIL </font>'
-               else:
-                   result_str = '<font color="green">PASS </font>'
+        if 'diag_run_time' in node:
+            if node['validation_time'] == 'Failed':
+                return "N/A"
+            elif 'software_test_status' in node:
+                if ":fail:" in node['software_test_status']:
+                    result_str = '<font color="red">FAIL </font>'
+                else:
+                    result_str = '<font color="green">PASS </font>'
 
-               node_name = node['node_name'] + "::" + \
-                           node['node_type']
-               url = reverse("horizon:admin:hpe_storage:diags:" + \
-                             "nova_test_detail",
-                             args=(node_name,)) + \
-                             "nova_test_details"
-               # url = reverse("horizon:admin:hpe_storage:diags:" + \
-               #               "software_test_detail",
-               #               args=(node_name,)) + \
-               #               "software_test_details"
-               # link = '<a href="%s">%s</a>' % (url, run_time)
-               link = '%s <a href="%s">(details)</a>' % (result_str, url)
-               return safestring.mark_safe(link)
-       else:
-           return "N/A"
+                node_name = node['node_name'] + "::" + \
+                    node['node_type']
+                url = reverse(
+                    "horizon:admin:hpe_storage:diags:nova_test_detail",
+                    args=(node_name,)) + \
+                    "nova_test_details"
+                # url = reverse("horizon:admin:hpe_storage:diags:" + \
+                #               "software_test_detail",
+                #               args=(node_name,)) + \
+                #               "software_test_details"
+                # link = '<a href="%s">%s</a>' % (url, run_time)
+                link = '%s <a href="%s">(details)</a>' % (result_str, url)
+                return safestring.mark_safe(link)
+        else:
+            return "N/A"
 
 
 class NovaNodeTable(tables.DataTable):

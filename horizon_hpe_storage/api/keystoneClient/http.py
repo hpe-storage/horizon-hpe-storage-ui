@@ -63,7 +63,10 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             # first get service id
             header = {'X-Auth-Token': self.token_id}
 
-            resp, body = self.get('/v3/services?name=ssmc-' + host, headers=header)
+            resp, body = self.get(
+                '/v3/services?name=ssmc-' + host,
+                headers=header)
+
             if body and 'services' in body:
                 services = body['services']
                 service = services[0]
@@ -88,7 +91,9 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         # first get service id
         header = {'X-Auth-Token': self.token_id}
 
-        resp, body = self.get('/v3/services?name=ssmc-3parfc', headers=header)
+        resp, body = self.get(
+            '/v3/services?name=ssmc-3parfc',
+            headers=header)
         if body and 'services' in body:
             services = body['services']
             service = services[0]
@@ -97,8 +102,9 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
         # now get endpoint for this service
         if service_id:
-            resp, body = self.get('/v3/endpoints?service_id=' +
-                                  service_id, headers=header)
+            resp, body = self.get(
+                '/v3/endpoints?service_id=' +
+                service_id, headers=header)
             if body and 'endpoints' in body:
                 endpoints = body['endpoints']
                 endpoint = endpoints[0]
@@ -148,7 +154,9 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         self.auth_try = 1
         header = {'X-Auth-Token': self.token_id}
         try:
-            resp, body = self.get('/v3/services?type=3par-link', headers=header)
+            resp, body = self.get(
+                '/v3/services?type=3par-link',
+                headers=header)
             if body and 'services' in body:
                 services = body['services']
                 # get endpoint for each service
@@ -195,7 +203,10 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                             'service_id': service_id
                         }
                     }
-                    resp, body = self.post('/v3/endpoints', headers=header, body=info)
+                    resp, body = self.post(
+                        '/v3/endpoints',
+                        headers=header,
+                        body=info)
 
     def updateSSMCEndpointUrl(self, service_id, url):
         # first need to get endpoint id
@@ -212,7 +223,10 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                     'service_id': service_id
                 }
             }
-            resp, body = self.patch('/v3/endpoints/' + endpt_id, headers=header, body=info)
+            resp, body = self.patch(
+                '/v3/endpoints/' + endpt_id,
+                headers=header,
+                body=info)
         except Exception as ex:
             exceptions.handle(self.request,
                               ('Unable to update SSMC Endpoint URL.'))
@@ -228,4 +242,4 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
             resp = self.delete('/v3/services/' + service_id, headers=header)
         except Exception as ex:
             exceptions.handle(self.request,
-                              ('Unable to delete SSMC Endpoint.'))
+                              'Unable to delete SSMC Endpoint.')

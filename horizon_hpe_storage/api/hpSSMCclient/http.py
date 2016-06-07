@@ -24,6 +24,7 @@ from horizon_hpe_storage.api.common import http
 
 LOG = logging.getLogger(__name__)
 
+
 class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
     """
     HTTP/REST client to access SSMC backend service
@@ -31,7 +32,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
 
     def authenticateSSMC(self, user, password, token, optional=None):
         """
-        This tries to create an authenticated session with the HPE3PAR SSMC service
+        This tries to create an authenticated session with the
+        HPE3PAR SSMC service
 
         :param user: The username
         :type user: str
@@ -50,7 +52,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                 header = {'Authorization': token}
                 try:
                     resp, body = self.get(
-                        '/foundation/REST/sessionservice/sessions/' + token + '/context',
+                        '/foundation/REST/sessionservice/sessions/' +
+                        token + '/context',
                         headers=header)
                     LOG.info("####### 2-SSMC Token is valid: %s\n", token)
                     self.auth_try = 0
@@ -73,7 +76,8 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                 info.update(optional)
 
             LOG.info("####### 3-request new token\n")
-            resp, body = self.post('/foundation/REST/sessionservice/sessions', body=info)
+            resp, body = self.post('/foundation/REST/sessionservice/sessions',
+                                   body=info)
             if body and 'object' in body:
                 object = body['object']
                 if object and 'Authorization' in object:
@@ -95,9 +99,9 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         self.auth_try = 1
         info = {'Authorization': self.session_key}
         nn = "'%s'" % name
-        path = '/provisioning/REST/volumeviewservice/volumes?query=name+eq+' + nn
+        path = \
+            '/provisioning/REST/volumeviewservice/volumes?query=name+eq+' + nn
         resp, body = self.get(path, headers=info)
-        # resp, body = self.get("/provisioning/REST/volumeviewservice/volumes?query=name")
         if body and 'count' in body:
             count = body['count']
             if count > 0:
@@ -121,6 +125,27 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
                             # store off link to Domain for this volume
                             self.domain = member['domainUID']
 
+    def getCGroupLink(self, name):
+        self.auth_try = 1
+        info = {'Authorization': self.session_key}
+        nn = "'%s'" % name
+        path = \
+            '/provisioning/REST/volumesetviewservice/sets?query=name+eq+' + nn
+        resp, body = self.get(path, headers=info)
+        if body and 'count' in body:
+            count = body['count']
+            if count > 0:
+                if 'members' in body:
+                    members = body['members']
+                    member = members[0]
+                    if member:
+                        if 'links' in member:
+                            # store off link to this volume
+                            links = member['links']
+                            for link in links:
+                                if link['rel'] == "self":
+                                    self.href = link['href']
+                                    break
 
     # NOT NEEDED???
     def getVolumeDetails(self):
@@ -162,7 +187,9 @@ class HTTPJSONRESTClient(http.HTTPJSONRESTClient):
         """
         # delete the session on the 3Par
         try:
-            self.delete('/foundation/REST/sessionservice/sessions/%s' % self.session_key)
+            self.delete(
+                '/foundation/REST/sessionservice/sessions/%s' %
+                self.session_key)
             self.session_key = None
         except Exception as ex:
             exceptions.handle(self.request,

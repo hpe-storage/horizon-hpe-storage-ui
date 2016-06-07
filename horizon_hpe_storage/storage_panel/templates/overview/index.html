@@ -18,21 +18,25 @@
   tool. This includes:
   <br>
   <ul style="list-style-type:square">
-    <li>Cinder node registration</li>
+    <li><b>Cinder node registration</b></li>
       Register Cinder nodes by supplying their node addresses, SSH
       credentials to access the node, and the path to the "cinder.conf"
       configuration file. This information is required to
       perform diagnostic tests and for discovering backend HPE storage arrays.
     <br>
-    <li>Nova node registration (Optional)</li>
+    <li><b>Nova node registration (Optional)</b></li>
       Register Nova nodes by supplying their node addresses and the SSH
       credentials to access them. This information is required to perform diagnostic tests.
     <br>
-    <li>Links between Cinder backends and SSMC instances</li>
+    <li><b>Links between Cinder backends and HPE SSMC instances</b></li>
       Configure links between Cinder backends and HPE 3PAR StoreServ Management Console (SSMC)
-      instances. Once created, any volume hosted on the Cinder backend will have
-      additional actions available in the Horizon Admin volumes table, including the ability
-      to link directly to its associated volume details panel in HPE SSMC.
+      instances. Once created, any volume or snapshot hosted on the Cinder backend will have
+      additional actions available in the Horizon Admin "Volumes" panel tables, including the
+      ability to link directly to its associated volume/snapshot details panel in HPE SSMC.
+      <br>
+      This feature is especially critical because volume and snapshot names assigned in Horizon
+      are not the names used when creating the object on the back-end storage array. This feature
+      provides the only means to link the two names together.
   </ul>
   <h4><b>Diagnostic Tests</b></h4>
   Use this panel to perform diagnostic tests on registered Cinder and Nova nodes.

@@ -39,7 +39,6 @@ class HTTPJSONRESTClient(httplib2.Http):
 
     SESSION_COOKIE_NAME = 'Authorization'
 
-
     def __init__(self, api_url, insecure=False, http_log_debug=True):
         super(HTTPJSONRESTClient, self).__init__(
             disable_ssl_certificate_validation=True)
@@ -73,8 +72,8 @@ class HTTPJSONRESTClient(httplib2.Http):
         self.http_log_debug = flag
         if self.http_log_debug:
             ch = logging.StreamHandler()
-            #self._logger.setLevel(logging.DEBUG)
-            #self._logger.addHandler(ch)
+            # self._logger.setLevel(logging.DEBUG)
+            # self._logger.addHandler(ch)
 
     def get_timings(self):
         """

@@ -276,7 +276,10 @@ class LicenseDetailView(tabs.TabView):
         license_data = {}
         licenses = self.get_data()
         license_data['licenses'] = licenses
-        return self.tab_group_class(request, license_data=license_data, **kwargs)
+        return self.tab_group_class(
+            request,
+            license_data=license_data,
+            **kwargs)
 
 
 class SystemDetailView(tabs.TabView):
@@ -315,14 +318,17 @@ class SystemDetailView(tabs.TabView):
                         if backend:
                             raw_results = backend.split("::")
                             disp_results = {}
-                            disp_results['backend_name'] = "[" + raw_results[0] + "]"
+                            disp_results['backend_name'] = \
+                                "[" + raw_results[0] + "]"
                             for raw_result in raw_results:
                                 if raw_result.startswith('system_info'):
                                     data = self.get_backend_system_info(
                                         raw_result[12:])
                                     if data['name'] == system_name:
-                                        data = self.update_license_info(data)
-                                        data = self.add_openstack_features(data)
+                                        data = \
+                                            self.update_license_info(data)
+                                        data = \
+                                            self.add_openstack_features(data)
                                         return data
 
         except Exception as ex:
@@ -379,18 +385,19 @@ class SystemDetailView(tabs.TabView):
         license_list = data['licenses']
 
         features = [
-            { "name": "Virtual Volumes",
-              "requirements": "Virtual Copy,Thin Provisioning"},
-            { "name": "Flash Cache", "requirements": "Adaptive Flash Cache"},
-            { "name": "Volume Migration", "requirements": "Dynamic Optimization"},
-            { "name": "Volume Retype", "requirements": "Dynamic Optimization"},
-            { "name": "Manage Volume", "requirements": "Dynamic Optimization"},
-            { "name": "Volume Snapshots", "requirements": "Virtual Copy"},
-            { "name": "Shares", "requirements": "File Persona Basic"},
+            {"name": "Virtual Volumes",
+             "requirements": "Virtual Copy,Thin Provisioning"},
+            {"name": "Flash Cache", "requirements": "Adaptive Flash Cache"},
+            {"name": "Volume Migration",
+             "requirements": "Dynamic Optimization"},
+            {"name": "Volume Retype", "requirements": "Dynamic Optimization"},
+            {"name": "Manage Volume", "requirements": "Dynamic Optimization"},
+            {"name": "Volume Snapshots", "requirements": "Virtual Copy"},
+            {"name": "Shares", "requirements": "File Persona Basic"},
             # TODO data compaction assoicated with backup?
             # { "name": "Data Compaction",
             #   "requirements": "Adaptive Optimization,Dynamic Optimization"},
-            { "name": "Volume Replication", "requirements": "Remote Copy"},
+            {"name": "Volume Replication", "requirements": "Remote Copy"},
         ]
 
         for feature in features:
@@ -400,7 +407,8 @@ class SystemDetailView(tabs.TabView):
                 if not self.license_enabled(data, requirement):
                     enabled = False
 
-            feature['requirements'] = safestring.mark_safe("<br>".join(requirements))
+            feature['requirements'] = \
+                safestring.mark_safe("<br>".join(requirements))
             feature['enabled'] = enabled
 
         data['openstack_features'] = features
@@ -412,4 +420,3 @@ class SystemDetailView(tabs.TabView):
     def get_tabs(self, request, *args, **kwargs):
         system_data = self.get_data()
         return self.tab_group_class(request, system_data=system_data, **kwargs)
-

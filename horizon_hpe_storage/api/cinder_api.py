@@ -22,6 +22,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+
 class CinderAPI(object):
 
     def __init__(self):

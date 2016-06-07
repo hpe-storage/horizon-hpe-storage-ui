@@ -35,7 +35,6 @@ class HPSSMCClient(object):
         """
         self.http.set_debug_flag(flag)
 
-
     def login(self, username, password, token, optional=None):
         """This authenticates against the 3PAR wsapi server and creates a
            session.
@@ -64,6 +63,9 @@ class HPSSMCClient(object):
 
     def getVolumeLink(self, volume_name):
         return self.http.getVolumeLink(volume_name)
+
+    def getCGroupLink(self, cgroup_name):
+        return self.http.getCGroupLink(cgroup_name)
 
     def getVolumeDetails(self):
         return self.http.getVolumeDetails()

@@ -18,6 +18,7 @@ import horizon
 
 from openstack_dashboard.dashboards.admin import dashboard
 
+
 class HPEStorage(horizon.Panel):
     name = _("HPE Storage")
     slug = "hpe_storage"

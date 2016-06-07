@@ -56,7 +56,8 @@ class CreateEndpointView(forms.ModalFormView):
     modal_id = "create_endpoint_modal"
     template_name = 'config/create_endpoint.html'
     submit_label = _("Create Link")
-    submit_url = reverse_lazy("horizon:admin:hpe_storage:config:create_endpoint")
+    submit_url = reverse_lazy(
+        "horizon:admin:hpe_storage:config:create_endpoint")
     success_url = reverse_lazy('horizon:admin:hpe_storage:index')
     page_title = _("Create SSMC Link")
 
@@ -103,7 +104,7 @@ class BaseLinkView(forms.ModalFormView):
         else:
             return None
 
-    def get_SSMC_endpoint(self, volume, snapshot=None):
+    def get_SSMC_endpoint(self, volume, snapshot=None, getCGroup=False):
         self.keystone_api.do_setup(self.request)
         self.barbican_api.do_setup(self.keystone_api.get_session())
 
@@ -142,8 +143,15 @@ class BaseLinkView(forms.ModalFormView):
 
             if self.ssmc_api.get_session_key():
                 if snapshot:
-                    snapshot_id = getattr(snapshot, "id")
-                    self.ssmc_api.get_snapshot_info(snapshot_id)
+                    if volume.consistencygroup_id:
+                        cgroup_id = volume.consistencygroup_id
+                        self.ssmc_api.get_cgroup_info(cgroup_id)
+                    else:
+                        snapshot_id = getattr(snapshot, "id")
+                        self.ssmc_api.get_snapshot_info(snapshot_id)
+                elif getCGroup:
+                    cgroup_id = volume.consistencygroup_id
+                    self.ssmc_api.get_cgroup_info(cgroup_id)
                 else:
                     volume_id = getattr(volume, "id")
                     self.ssmc_api.get_volume_info(volume_id)
@@ -159,7 +167,8 @@ class BaseLinkView(forms.ModalFormView):
                 cache.delete('ssmc-link-' + self.host)
                 raise ValueError("Unable to login to HPE 3PAR SSMC")
         else:
-            raise ValueError("SSMC Endpoint does not exist for this backend host")
+            raise ValueError(
+                "SSMC Endpoint does not exist for this backend host")
 
         return None
 
@@ -183,19 +192,23 @@ class LinkVolumeView(BaseLinkView):
     def get_data(self):
         try:
             # from openstack_dashboard import policy
-            # allowed = policy.check((("volume","volume:create"),), self.request)
-            # allowed = policy.check((("volume","volume:crXXeate"),), self.request)
+            # allowed = policy.check((("volume","volume:create"),),
+            # self.request)
             volume_id = self.kwargs['volume_id']
             volume = cinder.volume_get(self.request, volume_id)
 
             # volume_name = self.get_3par_vol_name(volume_id)
-            # LOG.info(("deep link - get keystone token for vol = %s") % volume_name)
+            # LOG.info(("deep link - get keystone token for vol = %s") %
+            # volume_name)
             # formatted_vol_name = format(volume_name)
-            LOG.info(("deep link - get keystone token for vol = %s") % volume.name)
+            LOG.info(("deep link - get keystone token for vol = %s") %
+                     volume.name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
-            LOG.info(("deep-link - Session Token = %s") % self.ssmc_api.get_session_key())
+            LOG.info(("deep-link - Session Token = %s") %
+                     self.ssmc_api.get_session_key())
+
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
                 # url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
@@ -206,7 +219,8 @@ class LinkVolumeView(BaseLinkView):
                 ref = urlparse(self.ssmc_api.get_volume_ref())
                 url = "0;url=" + endpoint + \
                       '#/virtual-volumes/show/capacity/r' + \
-                        ref.path + '?sessionToken=' + self.ssmc_api.get_session_key()
+                      ref.path + '?sessionToken=' + \
+                      self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time
                 # self.logout_SSMC_session()
@@ -232,7 +246,7 @@ class LinkVolumeView(BaseLinkView):
 
 
 class LinkVolumeCPGView(BaseLinkView):
-    submit_url = 'horizon:admin:hpe_storage:config:link_to_cpg'
+    submit_url = 'horizon:admin:hpe_storage:config:link_to_volume_cpg'
 
     def get_context_data(self, **kwargs):
         context = super(LinkVolumeCPGView, self).get_context_data(**kwargs)
@@ -245,23 +259,25 @@ class LinkVolumeCPGView(BaseLinkView):
     def get_data(self):
         try:
             # from openstack_dashboard import policy
-            # allowed = policy.check((("volume","volume:create"),), self.request)
-            # allowed = policy.check((("volume","volume:crXXeate"),), self.request)
+            # allowed = policy.check((("volume","volume:create"),),
+            # self.request)
             volume_id = self.kwargs['volume_id']
             volume = cinder.volume_get(self.request, volume_id)
 
-            LOG.info(("deep link - get keystone token for vol = %s") % volume.name)
+            LOG.info(("deep link - get keystone token for vol = %s") %
+                     volume.name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
-            LOG.info(("deep-link - Session Token = %s") % self.ssmc_api.get_session_key())
+            LOG.info(("deep-link - Session Token = %s") %
+                     self.ssmc_api.get_session_key())
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
                 url = "0;url=" + endpoint + '#/cpgs/show/'\
-                        'overview/r/provisioning/REST/cpgviewservice/' \
-                        'systems/' + self.ssmc_api.get_system_wwn() + \
-                        '/cpgs/' + self.ssmc_api.get_volume_cpg() + \
-                        '?sessionToken=' + self.ssmc_api.get_session_key()
+                      'overview/r/provisioning/REST/cpgviewservice/' \
+                      'systems/' + self.ssmc_api.get_system_wwn() + \
+                      '/cpgs/' + self.ssmc_api.get_volume_cpg() + \
+                      '?sessionToken=' + self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time
                 # self.logout_SSMC_session()
@@ -287,7 +303,7 @@ class LinkVolumeCPGView(BaseLinkView):
 
 
 class LinkVolumeDomainView(BaseLinkView):
-    submit_url = 'horizon:admin:hpe_storage:config:link_to_domain'
+    submit_url = 'horizon:admin:hpe_storage:config:link_to_volume_domain'
 
     def get_context_data(self, **kwargs):
         context = super(LinkVolumeDomainView, self).get_context_data(**kwargs)
@@ -300,23 +316,84 @@ class LinkVolumeDomainView(BaseLinkView):
     def get_data(self):
         try:
             # from openstack_dashboard import policy
-            # allowed = policy.check((("volume","volume:create"),), self.request)
-            # allowed = policy.check((("volume","volume:crXXeate"),), self.request)
+            # allowed = policy.check((("volume","volume:create"),),
+            # self.request)
             volume_id = self.kwargs['volume_id']
             volume = cinder.volume_get(self.request, volume_id)
 
-            LOG.info(("deep link - get keystone token for vol = %s") % volume.name)
+            LOG.info(("deep link - get keystone token for vol = %s") %
+                     volume.name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume)
-            LOG.info(("deep-link - Session Token = %s") % self.ssmc_api.get_session_key())
+            LOG.info(("deep-link - Session Token = %s") %
+                     self.ssmc_api.get_session_key())
             if endpoint:
                 # "0:url=" is needed for redirect tag for page
-                url = "0;url=" + endpoint + '#/domains/show/'\
-                        'overview/r/security/REST/domainviewservice/' \
-                        'systems/' + self.ssmc_api.get_system_wwn() + \
-                        '/domains/' + self.ssmc_api.get_volume_domain() + \
-                        '?sessionToken=' + self.ssmc_api.get_session_key()
+                url = "0;url=" + endpoint + '#/domains/show/' \
+                      'overview/r/security/REST/domainviewservice/' \
+                      'systems/' + self.ssmc_api.get_system_wwn() + \
+                      '/domains/' + self.ssmc_api.get_volume_domain() + \
+                      '?sessionToken=' + self.ssmc_api.get_session_key()
+
+                # USE if we want user to log in every time
+                # self.logout_SSMC_session()
+                LOG.info(("deep-link - SSMC URL = %s") % url)
+                return volume, url
+
+        except ValueError as err:
+            url = reverse('horizon:admin:volumes:volumes_tab')
+            exceptions.handle(self.request,
+                              err.message,
+                              redirect=url)
+        except Exception as err:
+            LOG.info(("deep-link error = %s") % err.message)
+            exceptions.handle(self.request,
+                              _('Unable to retrieve volume details.'),
+                              redirect=self.success_url)
+
+    def get_initial(self):
+        volume, link_url = self.get_data()
+        return {'volume_id': self.kwargs["volume_id"],
+                'name': volume.name,
+                'link_url': link_url}
+
+
+class LinkVolumeCGroupView(BaseLinkView):
+    submit_url = 'horizon:admin:hpe_storage:config:link_to_volume_cgroup'
+
+    def get_context_data(self, **kwargs):
+        context = super(LinkVolumeCGroupView, self).get_context_data(**kwargs)
+        args = (self.kwargs['volume_id'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        context['link_url'] = kwargs['form'].initial['link_url']
+        return context
+
+    @memoized.memoized_method
+    def get_data(self):
+        try:
+            # from openstack_dashboard import policy
+            # allowed = policy.check((("volume","volume:create"),),
+            # self.request)
+            volume_id = self.kwargs['volume_id']
+            volume = cinder.volume_get(self.request, volume_id)
+
+            LOG.info(("deep link - get keystone token for vol = %s") %
+                     volume.name)
+
+            # get volume data to build URI to SSMC
+            endpoint = self.get_SSMC_endpoint(volume, getCGroup=True)
+            LOG.info(("deep-link - Session Token = %s") %
+                     self.ssmc_api.get_session_key())
+
+            if endpoint:
+                ref = urlparse(self.ssmc_api.get_volume_ref())
+
+                # show vvset for cgroup
+                url = "0;url=" + endpoint + \
+                      '#/vv-sets/show/overview/r' + \
+                      ref.path + '?sessionToken=' + \
+                      self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time
                 # self.logout_SSMC_session()
@@ -355,30 +432,37 @@ class LinkSnapshotView(BaseLinkView):
     def get_data(self):
         try:
             # from openstack_dashboard import policy
-            # allowed = policy.check((("volume","volume:create"),), self.request)
-            # allowed = policy.check((("volume","volume:crXXeate"),), self.request)
+            # allowed = policy.check((("volume","volume:create"),),
+            # self.request)
             snapshot_id = self.kwargs['snapshot_id']
             snapshot = cinder.volume_snapshot_get(self.request, snapshot_id)
 
             volume_id = snapshot.volume_id
             volume = cinder.volume_get(self.request, volume_id)
 
-            LOG.info(("deep link - get keystone token for snapshot = %s") % snapshot.name)
+            LOG.info(("deep link - get keystone token for snapshot = %s") %
+                     snapshot.name)
 
             # get volume data to build URI to SSMC
             endpoint = self.get_SSMC_endpoint(volume, snapshot)
-            LOG.info(("deep-link - Session Token = %s") % self.ssmc_api.get_session_key())
+            LOG.info(("deep-link - Session Token = %s") %
+                     self.ssmc_api.get_session_key())
+
             if endpoint:
-                # "0:url=" is needed for redirect tag for page
-                # url = "0;url=" + endpoint + '#/virtual-volumes/show/'\
-                #         'capacity/r/provisioning/REST/volumeviewservice/' \
-                #         'systems/' + self.ssmc_api.get_system_wwn() + \
-                #         '/volumes/' + self.ssmc_api.get_volume_id() + \
-                #         '?sessionToken=' + self.ssmc_api.get_session_key()
                 ref = urlparse(self.ssmc_api.get_volume_ref())
-                url = "0;url=" + endpoint + \
-                      '#/virtual-volumes/show/capacity/r' + \
-                        ref.path + '?sessionToken=' + self.ssmc_api.get_session_key()
+
+                if volume.consistencygroup_id:
+                    # show vvset for cgroup and let user navigate to snapshot
+                    url = "0;url=" + endpoint + \
+                          '#/vv-sets/show/overview/r' + \
+                          ref.path + '?sessionToken=' + \
+                          self.ssmc_api.get_session_key()
+                else:
+                    # show snapshot view
+                    url = "0;url=" + endpoint + \
+                          '#/virtual-volumes/show/capacity/r' + \
+                          ref.path + '?sessionToken=' + \
+                          self.ssmc_api.get_session_key()
 
                 # USE if we want user to log in every time
                 # self.logout_SSMC_session()
@@ -446,7 +530,8 @@ class RegisterCinderView(forms.ModalFormView):
     modal_id = "register_cinder_modal"
     template_name = 'config/register_cinder.html'
     submit_label = _("Register Cinder Node")
-    submit_url = reverse_lazy("horizon:admin:hpe_storage:config:register_cinder_node")
+    submit_url = reverse_lazy(
+        "horizon:admin:hpe_storage:config:register_cinder_node")
     success_url = 'horizon:admin:hpe_storage:index'
     page_title = _("Register Cinder Node")
 
@@ -518,7 +603,8 @@ class RegisterNovaView(forms.ModalFormView):
     modal_id = "create_nova_modal"
     template_name = 'config/register_nova.html'
     submit_label = _("Register Nova Node")
-    submit_url = reverse_lazy("horizon:admin:hpe_storage:config:register_nova_node")
+    submit_url = reverse_lazy(
+        "horizon:admin:hpe_storage:config:register_nova_node")
     success_url = 'horizon:admin:hpe_storage:index'
     page_title = _("Register Nova Node")
 

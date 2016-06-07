@@ -604,5 +604,3 @@ class TestAllNovaView(forms.ModalFormView):
         "horizon:admin:hpe_storage:diags:test_all_nova_nodes")
     success_url = reverse_lazy('horizon:admin:hpe_storage:index')
     page_title = _("Run Diagnostic Test")
-
-

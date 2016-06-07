@@ -76,7 +76,6 @@ class ConfigTab(tabs.TableTab):
             exceptions.handle(self.request, msg)
         return sorted_nodes
 
-
     def get_reg_nova_nodes_data(self):
         sorted_nodes = []
 
@@ -116,7 +115,6 @@ class DiagsTab(tabs.TableTab):
             msg = _('Unable to retrieve Cinder Node list.')
             exceptions.handle(self.request, msg)
         return sorted_nodes
-
 
     def get_diag_nova_nodes_data(self):
         sorted_nodes = []
@@ -160,7 +158,8 @@ class ArraysTab(tabs.TableTab):
                         if backend:
                             raw_results = backend.split("::")
                             disp_results = {}
-                            disp_results['backend_name'] = "[" + raw_results[0] + "]"
+                            disp_results['backend_name'] = \
+                                "[" + raw_results[0] + "]"
                             for raw_result in raw_results:
                                 if raw_result.startswith('system_info'):
                                     data = self.get_storage_array_info(
@@ -208,7 +207,8 @@ class ArraysTab(tabs.TableTab):
         for cur_backend in temp_backend_list:
             is_dup = False
             for new_backend in new_backend_list:
-                if cur_backend['serial_number'] == new_backend['serial_number']:
+                if cur_backend['serial_number'] == \
+                        new_backend['serial_number']:
                     # this system already exists in out list
                     is_dup = True
                     for cur_cinder_host in cur_backend['cinder_hosts']:

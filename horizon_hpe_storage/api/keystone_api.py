@@ -28,6 +28,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+
 class KeystoneAPI(object):
 
     def __init__(self):
@@ -54,9 +55,10 @@ class KeystoneAPI(object):
                 if self.debug:
                     self.client.debug_rest(True)
 
-                keystone_client = k_client.Client(token=self.get_token_id(),
-                                      endpoint=self.keystone_api_url + "/v2.0",
-                                      tenant_name='admin')
+                keystone_client = k_client.Client(
+                    token=self.get_token_id(),
+                    endpoint=self.keystone_api_url + "/v2.0",
+                    tenant_name='admin')
                 self.session = k_session.Session(auth=keystone_client)
 
         except Exception as ex:

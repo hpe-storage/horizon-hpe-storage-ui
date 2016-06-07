@@ -81,13 +81,20 @@ class DeleteEndpointAction(tables.DeleteAction):
         # cached SSMC token is no longer valid
         cache.delete('ssmc-link-' + host)
 
+
 class EndpointsTable(tables.DataTable):
-    cinder_backend = tables.Column('backend', verbose_name=_('Cinder Backend'),
-                         form_field=forms.CharField(max_length=64))
-    ssmc_endpoint = tables.Column('endpoint', verbose_name=_('SSMC Instance'),
-                         form_field=forms.CharField(max_length=64))
-    access = tables.Column('username', verbose_name=_('SSMC Login'),
-                         form_field=forms.CharField(max_length=64))
+    cinder_backend = tables.Column(
+        'backend',
+        verbose_name=_('Cinder Backend'),
+        form_field=forms.CharField(max_length=64))
+    ssmc_endpoint = tables.Column(
+        'endpoint',
+        verbose_name=_('SSMC Instance'),
+        form_field=forms.CharField(max_length=64))
+    access = tables.Column(
+        'username',
+        verbose_name=_('SSMC Login'),
+        form_field=forms.CharField(max_length=64))
 
     def get_object_display(self, endpoint):
         return endpoint['backend']

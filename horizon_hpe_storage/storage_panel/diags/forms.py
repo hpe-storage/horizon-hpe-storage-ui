@@ -38,8 +38,8 @@ def run_cinder_node_test(node, software_tests, barbican_api):
     all_data = []
 
     # note 'section' must be lower case for diag tool
-    credentials_data['section'] = node['node_name'].lower() + '-' + \
-                                  barbican.CINDER_NODE_TYPE
+    credentials_data['section'] = \
+        node['node_name'].lower() + '-' + barbican.CINDER_NODE_TYPE
     credentials_data['service'] = barbican.CINDER_NODE_TYPE
     credentials_data['host_ip'] = node['node_ip']
     credentials_data['ssh_user'] = node['ssh_name']
@@ -72,7 +72,7 @@ def run_cinder_node_test(node, software_tests, barbican_api):
             node['ssh_pwd'],
             config_path=node['config_path'],
             diag_run_time=cur_time,
-            ssh_validation_time= "Failed")
+            ssh_validation_time="Failed")
 
         # no need to continue
         return
@@ -141,15 +141,16 @@ def run_cinder_node_test(node, software_tests, barbican_api):
         diag_status=config_status,
         software_status=software_status,
         diag_run_time=cur_time,
-        ssh_validation_time= cur_time)
+        ssh_validation_time=cur_time)
+
 
 def run_nova_node_test(node, software_tests, barbican_api):
     credentials_data = {}
     all_data = []
 
     # note 'section' must be lower case for diag tool
-    credentials_data['section'] = node['node_name'].lower() + '-' + \
-                                  barbican.NOVA_NODE_TYPE
+    credentials_data['section'] = \
+        node['node_name'].lower() + '-' + barbican.NOVA_NODE_TYPE
     credentials_data['service'] = barbican.NOVA_NODE_TYPE
     credentials_data['host_ip'] = node['node_ip']
     credentials_data['ssh_user'] = node['ssh_name']
@@ -180,7 +181,7 @@ def run_nova_node_test(node, software_tests, barbican_api):
             node['ssh_name'],
             node['ssh_pwd'],
             diag_run_time=cur_time,
-            ssh_validation_time= "Failed")
+            ssh_validation_time="Failed")
 
         # no need to continue
         return
@@ -225,7 +226,7 @@ def run_nova_node_test(node, software_tests, barbican_api):
         node['ssh_pwd'],
         software_status=software_status,
         diag_run_time=cur_time,
-        ssh_validation_time= cur_time)
+        ssh_validation_time=cur_time)
 
 
 class DumpCinder(forms.SelfHandlingForm):
@@ -290,9 +291,12 @@ class DumpCinder(forms.SelfHandlingForm):
                                 test_results += \
                                     ("\t\t" + key + ": " + value + "\n")
 
-                    stats += "\n\tConfig Items ('cinder.conf'):\n" + config_items
-                    stats += "\n\tTest Results for 'cinder.conf':\n" + test_results
-                    stats += "\n\tSystem Information:\n" + system_info
+                    stats += "\n\tConfig Items ('cinder.conf'):\n" + \
+                             config_items
+                    stats += "\n\tTest Results for 'cinder.conf':\n" + \
+                             test_results
+                    stats += "\n\tSystem Information:\n" + \
+                             system_info
 
             software_status = node['software_test_status']
             node_groups = []
@@ -361,8 +365,7 @@ class TestCinder(forms.SelfHandlingForm):
         max_length=255,
         label=_("Cinder Node"),
         required=False,
-        widget=forms.TextInput(
-        attrs={'readonly': 'readonly'}))
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
 
     keystone_api = keystone.KeystoneAPI()
     barbican_api = barbican.BarbicanAPI()
@@ -398,9 +401,10 @@ class TestCinder(forms.SelfHandlingForm):
             return True
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
-            exceptions.handle(request,
-                              _('Unable to run diagnostic test: ') + ex.message,
-                              redirect=redirect)
+            exceptions.handle(
+                request,
+                _('Unable to run diagnostic test: ') + ex.message,
+                redirect=redirect)
 
 
 class TestAllCinder(forms.SelfHandlingForm):
@@ -450,13 +454,16 @@ class TestAllCinder(forms.SelfHandlingForm):
             for node in self.nodes:
                 run_cinder_node_test(node, sw_tests, self.barbican_api)
 
-            messages.success(request, _('Successfully ran all diagnostic tests'))
+            messages.success(
+                request,
+                _('Successfully ran all diagnostic tests'))
             return True
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
-            exceptions.handle(request,
-                              _('Unable to run diagnostic tests: ') + ex.message,
-                              redirect=redirect)
+            exceptions.handle(
+                request,
+                _('Unable to run diagnostic tests: ') + ex.message,
+                redirect=redirect)
 
 
 class TestNova(forms.SelfHandlingForm):
@@ -464,8 +471,7 @@ class TestNova(forms.SelfHandlingForm):
         max_length=255,
         label=_("Nova Node"),
         required=False,
-        widget=forms.TextInput(
-        attrs={'readonly': 'readonly'}))
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
 
     keystone_api = keystone.KeystoneAPI()
     barbican_api = barbican.BarbicanAPI()
@@ -501,9 +507,10 @@ class TestNova(forms.SelfHandlingForm):
             return True
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
-            exceptions.handle(request,
-                              _('Unable to run diagnostic test: ') + ex.message,
-                              redirect=redirect)
+            exceptions.handle(
+                request,
+                _('Unable to run diagnostic test: ') + ex.message,
+                redirect=redirect)
 
 
 class TestAllNova(forms.SelfHandlingForm):
@@ -553,10 +560,13 @@ class TestAllNova(forms.SelfHandlingForm):
             for node in self.nodes:
                 run_nova_node_test(node, sw_tests, self.barbican_api)
 
-            messages.success(request, _('Successfully ran all diagnostic tests'))
+            messages.success(
+                request,
+                _('Successfully ran all diagnostic tests'))
             return True
         except Exception as ex:
             redirect = reverse("horizon:admin:hpe_storage:index")
-            exceptions.handle(request,
-                              _('Unable to run diagnostic tests: ') + ex.message,
-                              redirect=redirect)
+            exceptions.handle(
+                request,
+                _('Unable to run diagnostic tests: ') + ex.message,
+                redirect=redirect)
