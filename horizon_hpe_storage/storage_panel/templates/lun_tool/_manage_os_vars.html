@@ -1,0 +1,15 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      In order to successfully run the Volume Paths query on each registered Nova node,
+      the listed OpenStack environment variables need to be set.
+      <br>
+      <br>
+      These values will only be used if values have not been set for a specific Nova node.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+

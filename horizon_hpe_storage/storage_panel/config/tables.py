@@ -217,6 +217,10 @@ class CinderNodeTable(tables.DataTable):
         'node_ip',
         verbose_name=_('IP Address'),
         form_field=forms.CharField(max_length=64))
+    host_name = tables.Column(
+        'host_name',
+        verbose_name=_('Host Name'),
+        form_field=forms.CharField(max_length=64))
     ssh_user = tables.Column(
         'ssh_name',
         verbose_name=_('SSH Username'),
@@ -326,6 +330,13 @@ class EditNovaAction(tables.LinkAction):
     classes = ("ajax-modal",)
 
 
+class ManageOSVariables(tables.LinkAction):
+    name = "manage_os_vars"
+    verbose_name = _("Manage OpenStack Variables")
+    url = "horizon:admin:hpe_storage:config:manage_os_vars"
+    classes = ("ajax-modal",)
+
+
 class NovaNodeTable(tables.DataTable):
     test_name = tables.Column(
         'node_name',
@@ -334,6 +345,10 @@ class NovaNodeTable(tables.DataTable):
     node_ip = tables.Column(
         'node_ip',
         verbose_name=_('IP Address'),
+        form_field=forms.CharField(max_length=64))
+    host_name = tables.Column(
+        'host_name',
+        verbose_name=_('Host Name'),
         form_field=forms.CharField(max_length=64))
     ssh_user = tables.Column(
         'ssh_name',
@@ -359,4 +374,5 @@ class NovaNodeTable(tables.DataTable):
                          DeleteNovaAction)
         row_actions = (ValidateNovaAction,
                        EditNovaAction,
+                       ManageOSVariables,
                        DeleteNovaAction)

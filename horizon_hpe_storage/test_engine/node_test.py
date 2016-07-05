@@ -117,3 +117,26 @@ class NodeTest():
             time.sleep(2)
             if self.proc.stdout.closed and self.proc.stderr.closed:
                 done = True
+
+    def run_volume_paths_test(self, conf_data, os_vars, attached_volumes):
+        self.errors_occurred = False
+        self.error_text = ''
+        self.test_result_text = ''
+        self.io_q = Queue()
+        self.proc = Popen(['cinderdiags', '-v', 'volume-paths-check', '-f',
+                           'json', '-conf-data', conf_data,
+                           '-os-vars', os_vars,
+                           '-attached-volumes', attached_volumes],
+                          stdout=PIPE,
+                          stderr=PIPE)
+        Thread(target=self.stream_watcher, name='stdout-watcher',
+               args=('STDOUT', self.proc.stdout)).start()
+        Thread(target=self.stream_watcher, name='stderr-watcher',
+               args=('STDERR', self.proc.stderr)).start()
+        Thread(target=self.printer, name='printer').start()
+
+        done = False
+        while not done:
+            time.sleep(2)
+            if self.proc.stdout.closed and self.proc.stderr.closed:
+                done = True

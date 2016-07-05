@@ -155,7 +155,8 @@ class DiagSoftwareTestResultsColumn(tables.Column):
     # Customized column class.
     def get_raw_data(self, node):
         if 'diag_run_time' in node:
-            if node['validation_time'] == 'Failed':
+            if 'validation_time' in node and \
+                    node['validation_time'] == 'Failed':
                 return "N/A"
             elif 'software_test_status' in node:
                 if ":fail:" in node['software_test_status']:

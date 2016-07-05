@@ -631,3 +631,23 @@ class EditNovaView(forms.ModalFormView):
     def get_initial(self):
         node_name = self.kwargs['node_name']
         return {'node_name': node_name}
+
+
+class ManageOSVarsView(forms.ModalFormView):
+    form_class = config_forms.ManageOSVars
+    modal_header = _("Manage OpenStack Environment Variables")
+    modal_id = "manage_os_vars_modal"
+    template_name = 'config/manage_os_vars.html'
+    submit_label = _("Submit")
+    submit_url = "horizon:admin:hpe_storage:config:manage_os_vars"
+    success_url = reverse_lazy('horizon:admin:hpe_storage:index')
+
+    def get_context_data(self, **kwargs):
+        context = super(ManageOSVarsView, self).get_context_data(**kwargs)
+        args = (self.kwargs['node_name'],)
+        context['submit_url'] = reverse(self.submit_url, args=args)
+        return context
+
+    def get_initial(self):
+        node_name = self.kwargs['node_name']
+        return {'node_name': node_name}

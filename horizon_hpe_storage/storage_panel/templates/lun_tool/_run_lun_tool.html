@@ -1,0 +1,31 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Run the volume path query on all registered Nova nodes. The query
+      lists all existing volume paths for each Nova node, as well as list any
+      attached OpenStack volumes associated with the paths.
+      <br>
+      <br>
+      Note that the following conditions must exist for the query to be successful:
+      <ul style="list-style-type:square">
+        <li>
+          Nova nodes have been properly configured from the "Configuration" tab of this panel.
+        </li>
+        <li>
+          The package <b>python-brick-cinderclient-ext</b> must be installed on each Nova node.
+        </li>
+        <li>
+          OpenStack environment variables must be set, either by setting them for each
+          Nova node (this option is available for each Nova node listed in the "Configuration"
+          tab panel), or by setting the default values (this option is available on this panel).
+        </li>
+      </ul>
+      <br>
+      Warning - this query may take several minutes to complete.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+

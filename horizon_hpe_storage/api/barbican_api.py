@@ -175,38 +175,48 @@ class BarbicanAPI(object):
             # now delete container
             self.client.containers.delete(container.container_ref)
 
-    def add_node(self, name, type, ip,
+    def add_node(self, name, type, ip, host_name,
                  ssh_name, ssh_pwd, config_path=None, diag_status=None,
                  software_status=None, diag_run_time=None,
-                 ssh_validation_time=None):
+                 ssh_validation_time=None, os_vars=None):
+        # ensure container doesn't already exist
+        node_name = type + '-cinderdiags-' + name
+        container = self._get_container(node_name)
+        if container:
+            raise Exception(node_name + " already exists")
+
         # first create secret for each field
         secrets = {}
 
         node_data = {}
 
         meta_data = {}
-        meta_data["node_name"] = name
-        meta_data["node_type"] = type
-        meta_data["node_ip"] = ip
-        meta_data["ssh_name"] = ssh_name
-        meta_data["ssh_pwd"] = ssh_pwd
+        meta_data['node_name'] = name
+        meta_data['node_type'] = type
+        meta_data['node_ip'] = ip
+        meta_data['host_name'] = host_name
+        meta_data['ssh_name'] = ssh_name
+        meta_data['ssh_pwd'] = ssh_pwd
 
         if config_path:
-            meta_data["config_path"] = config_path
+            meta_data['config_path'] = config_path
 
         if diag_run_time:
-            meta_data["diag_run_time"] = diag_run_time
+            meta_data['diag_run_time'] = diag_run_time
 
         if ssh_validation_time:
-            meta_data["validation_time"] = ssh_validation_time
+            meta_data['validation_time'] = ssh_validation_time
 
-        node_data["meta_data"] = meta_data
+        if os_vars:
+            meta_data['os_vars'] = os_vars
+
+        node_data['meta_data'] = meta_data
 
         if diag_status:
-            node_data["diag_test_status"] = diag_status
+            node_data['diag_test_status'] = diag_status
 
         if software_status:
-            node_data["software_test_status"] = software_status
+            node_data['software_test_status'] = software_status
 
         # store as json string
         node_data_str = json.dumps(node_data)
@@ -218,7 +228,6 @@ class BarbicanAPI(object):
         # create container
         secret_list = {}
         secret_list['secrets'] = secrets
-        node_name = type + '-cinderdiags-' + name
         node = self.client.containers.create(node_name,
                                              **secret_list)
         node.store()
@@ -352,3 +361,118 @@ class BarbicanAPI(object):
         self._delete_software_test_container(type)
         new_tests = []
         self._add_software_tests(type, new_tests)
+
+    # LUN Tool data functions
+    def add_lun_tool_result(self, timestamp, result):
+        secrets = []
+
+        # store as json string
+        result_data = {}
+        result_data['timestamp'] = timestamp
+        result_data['node_list'] = result
+        result_data_str = json.dumps(result_data)
+        new_secret = self.client.secrets.create(
+            name='lun-tool-result',
+            payload=result_data_str)
+        new_secret.store()
+
+    def get_lun_tool_results(self):
+        results = []
+        secrets = self.client.secrets.list(name='lun-tool-result',
+                                           limit=self.secret_limit)
+        for secret in secrets:
+            data_str = secret.payload
+            json_data = json.loads(data_str)
+            result = {}
+            result['timestamp'] = json_data['timestamp']
+            result['node_list'] = json_data['node_list']
+            results.append(result)
+
+        return results
+
+    def delete_lun_tool_result(self, timestamp):
+        secrets = self.client.secrets.list(name='lun-tool-result',
+                                           limit=self.secret_limit)
+        for secret in secrets:
+            data_str = secret.payload
+            json_data = json.loads(data_str)
+            test_timestamp = json_data['timestamp']
+            if test_timestamp == timestamp:
+                self.client.secrets.delete(secret.secret_ref)
+                return True
+
+        return False
+
+    def add_lun_tool_default_os_vars(self, os_username, os_password,
+                                     os_tenant, os_auth):
+        secrets = []
+
+        # store as json string
+        os_vars = {}
+        os_vars['os_username'] = os_username
+        os_vars['os_password'] = os_password
+        os_vars['os_tenant'] = os_tenant
+        os_vars['os_auth'] = os_auth
+        vars_data_str = json.dumps(os_vars)
+        new_secret = self.client.secrets.create(
+            name='lun-tool-default-os-vars',
+            payload=vars_data_str)
+        new_secret.store()
+
+    def get_lun_tool_default_os_vars(self):
+        secrets = self.client.secrets.list(name='lun-tool-default-os-vars',
+                                           limit=self.secret_limit)
+        result = {}
+        for secret in secrets:
+            data_str = secret.payload
+            json_data = json.loads(data_str)
+            result['os_username'] = json_data['os_username']
+            result['os_password'] = json_data['os_password']
+            result['os_tenant'] = json_data['os_tenant']
+            result['os_auth'] = json_data['os_auth']
+            break
+
+        return result
+
+    def delete_lun_tool_default_os_vars(self):
+        secrets = self.client.secrets.list(name='lun-tool-default-os-vars',
+                                           limit=self.secret_limit)
+        for secret in secrets:
+            data_str = secret.payload
+            json_data = json.loads(data_str)
+            self.client.secrets.delete(secret.secret_ref)
+            return True
+
+        return False
+
+    def add_lun_tool_diffs(self, diffs):
+        secrets = []
+
+        # store as json string
+        vars_data_str = json.dumps(diffs)
+        new_secret = self.client.secrets.create(
+            name='lun-tool-diffs',
+            payload=vars_data_str)
+        new_secret.store()
+
+    def get_lun_tool_diffs(self):
+        secrets = self.client.secrets.list(name='lun-tool-diffs',
+                                           limit=self.secret_limit)
+        result = []
+        for secret in secrets:
+            data_str = secret.payload
+            result = json.loads(data_str)
+            break
+
+        return result
+
+    def delete_lun_tool_diffs(self):
+        secrets = self.client.secrets.list(name='lun-tool-diffs',
+                                           limit=self.secret_limit)
+        for secret in secrets:
+            data_str = secret.payload
+            json_data = json.loads(data_str)
+            self.client.secrets.delete(secret.secret_ref)
+            return True
+
+        return False

@@ -320,6 +320,7 @@ def run_ssh_validation_test(node, node_type, barbican_api):
         node['node_name'],
         node_type,
         node['node_ip'],
+        node['host_name'],
         node['ssh_name'],
         node['ssh_pwd'],
         config_path=config_path,
@@ -334,6 +335,10 @@ class RegisterCinderNode(forms.SelfHandlingForm):
     node_ip = forms.IPField(
         label=_("IP Address"),
         help_text=_("Address of system hosting the Cinder service."))
+    host_name = forms.CharField(
+        max_length=255,
+        label=_("Host Name"),
+        help_text=_("Host name associated with this IP address."))
     ssh_name = forms.CharField(
         max_length=255,
         label=_("SSH Username"),
@@ -379,6 +384,7 @@ class RegisterCinderNode(forms.SelfHandlingForm):
                 data['node_name'],
                 barbican.CINDER_NODE_TYPE,
                 data['node_ip'],
+                data['host_name'],
                 data['ssh_name'],
                 data['ssh_pwd'],
                 config_path=data['config_path'])
@@ -402,6 +408,10 @@ class EditCinderNode(forms.SelfHandlingForm):
     node_ip = forms.IPField(
         label=_("IP Address"),
         help_text=_("Address of system hosting the Cinder service."))
+    host_name = forms.CharField(
+        max_length=255,
+        label=_("Host Name"),
+        help_text=_("Host name associated with this IP address."))
     ssh_name = forms.CharField(
         max_length=255,
         label=_("SSH Username"),
@@ -430,6 +440,7 @@ class EditCinderNode(forms.SelfHandlingForm):
         try:
             node_name_field = self.fields['node_name']
             node_ip_field = self.fields['node_ip']
+            host_name_field = self.fields['host_name']
             ssh_name_field = self.fields['ssh_name']
             ssh_pwd_field = self.fields['ssh_pwd']
             config_path_field = self.fields['config_path']
@@ -445,6 +456,11 @@ class EditCinderNode(forms.SelfHandlingForm):
                 node_ip_field.initial = node['node_ip']
             else:
                 node_ip_field.initial = ''
+
+            if 'host_name' in node:
+                host_name_field.initial = node['host_name']
+            else:
+                host_name_field.initial = ''
 
             if 'ssh_name' in node:
                 ssh_name_field.initial = node['ssh_name']
@@ -473,16 +489,23 @@ class EditCinderNode(forms.SelfHandlingForm):
 
         # ensure that data has changed
         node_ip_field = self.fields['node_ip']
+        host_name_field = self.fields['host_name']
         ssh_name_field = self.fields['ssh_name']
         ssh_pwd_field = self.fields['ssh_pwd']
         config_path_field = self.fields['config_path']
 
-        if form_data['node_ip'] == node_ip_field.initial:
-            if form_data['ssh_name'] == ssh_name_field.initial:
-                if form_data['ssh_pwd'] == ssh_pwd_field.initial:
-                    if form_data['config_path'] == config_path_field.initial:
-                        raise forms.ValidationError(
-                            _('No fields have been modified.'))
+        if form_data['node_ip'] == \
+                node_ip_field.initial:
+            if form_data['host_name'] == \
+                    host_name_field.initial:
+                if form_data['ssh_name'] == \
+                        ssh_name_field.initial:
+                    if form_data['ssh_pwd'] == \
+                            ssh_pwd_field.initial:
+                        if form_data['config_path'] == \
+                                config_path_field.initial:
+                            raise forms.ValidationError(
+                                _('No fields have been modified.'))
 
         # Check to make sure password fields match.
         if form_data['ssh_pwd'] != ssh_pwd_field.initial:
@@ -505,6 +528,7 @@ class EditCinderNode(forms.SelfHandlingForm):
                 data['node_name'],
                 barbican.CINDER_NODE_TYPE,
                 data['node_ip'],
+                data['host_name'],
                 data['ssh_name'],
                 data['ssh_pwd'],
                 config_path=data['config_path'])
@@ -624,6 +648,10 @@ class RegisterNovaNode(forms.SelfHandlingForm):
     node_ip = forms.IPField(
         label=_("IP Address"),
         help_text=_("Address of system hosting the Nova service."))
+    host_name = forms.CharField(
+        max_length=255,
+        label=_("Host Name"),
+        help_text=_("Host name associated with this IP address."))
     ssh_name = forms.CharField(
         max_length=255,
         label=_("SSH Username"),
@@ -662,6 +690,7 @@ class RegisterNovaNode(forms.SelfHandlingForm):
                 data['node_name'],
                 barbican.NOVA_NODE_TYPE,
                 data['node_ip'],
+                data['host_name'],
                 data['ssh_name'],
                 data['ssh_pwd'])
 
@@ -684,6 +713,10 @@ class EditNovaNode(forms.SelfHandlingForm):
     node_ip = forms.IPField(
         label=_("IP Address"),
         help_text=_("Address of system hosting the Nova service."))
+    host_name = forms.CharField(
+        max_length=255,
+        label=_("Host Name"),
+        help_text=_("Host name associated with this IP address."))
     ssh_name = forms.CharField(
         max_length=255,
         label=_("SSH Username"),
@@ -709,6 +742,7 @@ class EditNovaNode(forms.SelfHandlingForm):
         try:
             node_name_field = self.fields['node_name']
             node_ip_field = self.fields['node_ip']
+            host_name_field = self.fields['host_name']
             ssh_name_field = self.fields['ssh_name']
             ssh_pwd_field = self.fields['ssh_pwd']
 
@@ -723,6 +757,11 @@ class EditNovaNode(forms.SelfHandlingForm):
                 node_ip_field.initial = node['node_ip']
             else:
                 node_ip_field.initial = ''
+
+            if 'host_name' in node:
+                host_name_field.initial = node['host_name']
+            else:
+                host_name_field.initial = ''
 
             if 'ssh_name' in node:
                 ssh_name_field.initial = node['ssh_name']
@@ -746,14 +785,16 @@ class EditNovaNode(forms.SelfHandlingForm):
 
         # ensure that data has changed
         node_ip_field = self.fields['node_ip']
+        host_name_field = self.fields['host_name']
         ssh_name_field = self.fields['ssh_name']
         ssh_pwd_field = self.fields['ssh_pwd']
 
         if form_data['node_ip'] == node_ip_field.initial:
-            if form_data['ssh_name'] == ssh_name_field.initial:
-                if form_data['ssh_pwd'] == ssh_pwd_field.initial:
-                    raise forms.ValidationError(
-                        _('No fields have been modified.'))
+            if form_data['host_name'] == host_name_field.initial:
+                if form_data['ssh_name'] == ssh_name_field.initial:
+                    if form_data['ssh_pwd'] == ssh_pwd_field.initial:
+                        raise forms.ValidationError(
+                            _('No fields have been modified.'))
 
         # Check to make sure password fields match.
         if form_data['ssh_pwd'] != ssh_pwd_field.initial:
@@ -776,6 +817,7 @@ class EditNovaNode(forms.SelfHandlingForm):
                 data['node_name'],
                 barbican.NOVA_NODE_TYPE,
                 data['node_ip'],
+                data['host_name'],
                 data['ssh_name'],
                 data['ssh_pwd'])
 
@@ -885,3 +927,135 @@ class ValidateAllNovaNodes(forms.SelfHandlingForm):
             exceptions.handle(request,
                               _('Unable to run SSH credentials test: ') +
                               ex.message, redirect=redirect)
+
+
+class ManageOSVars(forms.SelfHandlingForm):
+    node_name = forms.CharField(
+        max_length=255,
+        label=_("Node Name"),
+        required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}))
+    os_username = forms.CharField(
+        label=_("OS_USERNAME"))
+    os_password = forms.RegexField(
+        label=_("OS_PASSWORD"),
+        widget=forms.PasswordInput(render_value=False),
+        regex=validators.password_validator(),
+        error_messages={'invalid': validators.password_validator_msg()})
+    confirm_password = forms.CharField(
+        label=_("Confirm OS_PASSWORD"),
+        widget=forms.PasswordInput(render_value=False))
+    os_tenant = forms.CharField(
+        label=_("OS_TENANT_NAME"))
+    os_auth = forms.CharField(
+        label=_("OS_AUTH_URL"))
+
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
+
+    def __init__(self, request, *args, **kwargs):
+        super(ManageOSVars, self).__init__(request, *args, **kwargs)
+        node_name = self.initial['node_name']
+
+        try:
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            nova_node = self.barbican_api.get_node(
+                node_name,
+                barbican.NOVA_NODE_TYPE)
+
+            if nova_node:
+                if 'os_vars' in nova_node:
+                    os_vars = nova_node['os_vars']
+                    self.fields['os_username'].initial = os_vars['os_username']
+                    self.fields['os_password'].initial = os_vars['os_password']
+                    self.fields['os_password'].widget.render_value = True
+                    self.fields['os_tenant'].initial = os_vars['os_tenant']
+                    self.fields['os_auth'].initial = os_vars['os_auth']
+
+        except Exception as ex:
+            redirect = reverse("horizon:admin:hpe_storage:index")
+            exceptions.handle(request,
+                              _('Unable to update Nova node registration'),
+                              redirect=redirect)
+
+    def clean(self):
+        # Check to make sure password fields match
+        form_data = super(ManageOSVars, self).clean()
+
+        # ensure that data has changed
+        os_username_field = self.fields['os_username']
+        os_password_field = self.fields['os_password']
+        os_tenant_field = self.fields['os_tenant']
+        os_auth_field = self.fields['os_auth']
+
+        if form_data['os_username'] == os_username_field.initial:
+            if form_data['os_password'] == os_password_field.initial:
+                if form_data['os_tenant'] == os_tenant_field.initial:
+                    if form_data['os_auth'] == os_auth_field.initial:
+                        raise forms.ValidationError(
+                            _('No fields have been modified.'))
+
+        # Check to make sure password fields match.
+        if form_data['os_password'] != os_password_field.initial:
+            if form_data['os_password'] != form_data['confirm_password']:
+                raise ValidationError(_('Passwords do not match.'))
+
+        return form_data
+
+    def handle(self, request, data):
+        try:
+            self.keystone_api.do_setup(request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            node_name = self.fields['node_name'].initial
+            node = self.barbican_api.get_node(
+                node_name,
+                barbican.NOVA_NODE_TYPE)
+
+            self.barbican_api.delete_node(
+                self.fields['node_name'].initial,
+                barbican.NOVA_NODE_TYPE)
+
+            diag_run_time = None
+            if 'diag_run_time' in node:
+                diag_run_time = node['diag_run_time']
+
+            diag_test_status = None
+            if 'diag_test_status' in node:
+                diag_test_status = node['diag_test_status']
+
+            ssh_validation_time = None
+            if 'validation_time' in node:
+                ssh_validation_time = node['validation_time']
+
+            software_status = None
+            if 'software_test_status' in node:
+                software_status = node['software_test_status']
+
+            os_vars = {'os_username': data['os_username'],
+                       'os_password': data['os_password'],
+                       'os_tenant': data['os_tenant'],
+                       'os_auth': data['os_auth']}
+
+            self.barbican_api.add_node(
+                node_name,
+                barbican.NOVA_NODE_TYPE,
+                node['node_ip'],
+                node['host_name'],
+                node['ssh_name'],
+                node['ssh_pwd'],
+                diag_status=diag_test_status,
+                software_status=software_status,
+                diag_run_time=diag_run_time,
+                ssh_validation_time=ssh_validation_time,
+                os_vars=os_vars)
+
+            messages.success(request, _('Successfully updated OpenStack '
+                                        'environment variables'))
+            return True
+        except Exception as ex:
+            redirect = reverse("horizon:admin:hpe_storage:index")
+            exceptions.handle(request,
+                              _('Unable to update OpenStack environment '
+                                'variables.'),
+                              redirect=redirect)

@@ -42,6 +42,7 @@ def run_cinder_node_test(node, software_tests, barbican_api):
         node['node_name'].lower() + '-' + barbican.CINDER_NODE_TYPE
     credentials_data['service'] = barbican.CINDER_NODE_TYPE
     credentials_data['host_ip'] = node['node_ip']
+    credentials_data['host_name'] = node['host_name']
     credentials_data['ssh_user'] = node['ssh_name']
     credentials_data['ssh_password'] = node['ssh_pwd']
     credentials_data['conf_source'] = node['config_path']
@@ -68,6 +69,7 @@ def run_cinder_node_test(node, software_tests, barbican_api):
             node['node_name'],
             barbican.CINDER_NODE_TYPE,
             node['node_ip'],
+            node['host_name'],
             node['ssh_name'],
             node['ssh_pwd'],
             config_path=node['config_path'],
@@ -135,6 +137,7 @@ def run_cinder_node_test(node, software_tests, barbican_api):
         node['node_name'],
         barbican.CINDER_NODE_TYPE,
         node['node_ip'],
+        node['host_name'],
         node['ssh_name'],
         node['ssh_pwd'],
         config_path=node['config_path'],
@@ -153,6 +156,7 @@ def run_nova_node_test(node, software_tests, barbican_api):
         node['node_name'].lower() + '-' + barbican.NOVA_NODE_TYPE
     credentials_data['service'] = barbican.NOVA_NODE_TYPE
     credentials_data['host_ip'] = node['node_ip']
+    credentials_data['host_name'] = node['host_name']
     credentials_data['ssh_user'] = node['ssh_name']
     credentials_data['ssh_password'] = node['ssh_pwd']
 
@@ -178,6 +182,7 @@ def run_nova_node_test(node, software_tests, barbican_api):
             node['node_name'],
             barbican.NOVA_NODE_TYPE,
             node['node_ip'],
+            node['host_name'],
             node['ssh_name'],
             node['ssh_pwd'],
             diag_run_time=cur_time,
@@ -222,6 +227,7 @@ def run_nova_node_test(node, software_tests, barbican_api):
         node['node_name'],
         barbican.NOVA_NODE_TYPE,
         node['node_ip'],
+        node['host_name'],
         node['ssh_name'],
         node['ssh_pwd'],
         software_status=software_status,
@@ -255,7 +261,8 @@ class DumpCinder(forms.SelfHandlingForm):
 
             stats = "node name: " + node['node_name'] + "\n"
             stats += "node type: " + node['node_type'] + "\n"
-            stats += "ip: " + node['node_ip'] + "\n"
+            stats += "host ip: " + node['node_ip'] + "\n"
+            stats += "host name: " + node['host_name'] + "\n"
             stats += "SSH uname: " + node['ssh_name'] + "\n"
             stats += "SSH pwd: " + ('*' * len(node['ssh_pwd'])) + "\n"
             stats += "config path: " + node['config_path'] + "\n"

@@ -78,4 +78,7 @@ urlpatterns = patterns(
     url(r'^validate_all_nova_nodes/$',
         views.ValidateAllNovaView.as_view(),
         name='validate_all_nova_nodes'),
+    url(r'^(?P<node_name>[^/]+)/manage_os_vars/$',
+        views.ManageOSVarsView.as_view(),
+        name='manage_os_vars'),
 )

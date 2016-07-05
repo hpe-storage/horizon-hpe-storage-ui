@@ -26,6 +26,8 @@ from horizon_hpe_storage.storage_panel.diags \
     import tables as diags_tables
 from horizon_hpe_storage.storage_panel.storage_arrays \
     import tables as arrays_tables
+from horizon_hpe_storage.storage_panel.lun_tool \
+    import tables as lun_tool_tables
 
 
 import horizon_hpe_storage.api.keystone_api as keystone
@@ -239,8 +241,32 @@ class OverviewTab(tabs.TableTab):
         return list
 
 
+class LunToolTab(tabs.TableTab):
+    name = _("Volume Paths")
+    slug = "lun_tool_tab"
+    template_name = "horizon/common/_detail_table.html"
+    table_classes = (lun_tool_tables.LunToolTable,)
+    keystone_api = keystone.KeystoneAPI()
+    barbican_api = barbican.BarbicanAPI()
+
+    def get_lun_volume_paths_data(self):
+        sorted_results = []
+        results = []
+
+        try:
+            self.keystone_api.do_setup(self.request)
+            self.barbican_api.do_setup(self.keystone_api.get_session())
+            results = self.barbican_api.get_lun_tool_results()
+            sorted_results = sorted(results, key=itemgetter('timestamp'))
+
+        except Exception as ex:
+            msg = _('Unable to retrieve Volume Path Tool results.')
+            exceptions.handle(self.request, msg)
+        return sorted_results
+
+
 class StorageTabs(tabs.TabGroup):
     slug = "storage_tabs"
-    tabs = (OverviewTab, ConfigTab, DiagsTab, ArraysTab)
+    tabs = (OverviewTab, ConfigTab, DiagsTab, ArraysTab, LunToolTab)
     sticky = True
     # show_single_tab = True

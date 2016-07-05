@@ -247,6 +247,7 @@ class CinderTestDetailView(tabs.TabView):
         stats = "node name: " + node['node_name'] + "\n"
         stats += "node type: " + node_type + "\n"
         stats += "ip: " + node['node_ip'] + "\n"
+        stats += "host name: " + node['host_name'] + "\n"
         stats += "SSH uname: " + node['ssh_name'] + "\n"
         stats += "SSH pwd: " + ('*' * len(node['ssh_pwd'])) + "\n"
         if node_type == barbican.CINDER_NODE_TYPE:
@@ -519,6 +520,7 @@ class NovaTestDetailView(tabs.TabView):
         stats = "node name: " + node['node_name'] + "\n"
         stats += "node type: " + node_type + "\n"
         stats += "ip: " + node['node_ip'] + "\n"
+        stats += "host name: " + node['host_name'] + "\n"
         stats += "SSH uname: " + node['ssh_name'] + "\n"
         stats += "SSH pwd: " + ('*' * len(node['ssh_pwd'])) + "\n"
         stats += "run time: " + node['validation_time'] + "\n"
@@ -555,10 +557,12 @@ class NovaTestDetailView(tabs.TabView):
                         entry['curr_version'] = "Not Installed"
                         entry['test_result'] = self.color_result("fail")
                     else:
-                        version_info = sw_test['version'].split(" (")
-                        entry['curr_version'] = version_info[1][:-1]
-                        entry['test_result'] = self.color_result(
-                            version_info[0])
+                        if " (" in sw_test['version']:
+                            version_info = sw_test['version'].split(" (")
+                            entry['curr_version'] = version_info[1][:-1]
+                        else:
+                            entry['curr_version'] = "unknown"
+                        entry['test_result'] = self.color_result("pass")
                     software_results.append(entry)
                     break
 

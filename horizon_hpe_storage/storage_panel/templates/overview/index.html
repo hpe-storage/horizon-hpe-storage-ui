@@ -10,6 +10,8 @@
       storage.</li>
     <li>Provide a direct link between OpenStack volumes and their associated detail views
     in the HPE storage management console.</li>
+    <li>Query Nova nodes for active Volume Paths. This information can be used to validate storage
+      volume attachments to instance nodes.</li>
   </ul>
   <br>
   The HPE Horzion plug-in consists of multiple tabs, each described in detail below:
@@ -56,6 +58,13 @@
     <li>Array license information and how each relates to OpenStack features</li>
     <li>Storage pool capabilities</li>
   </ul>
+  <h4><b>Volume Paths</b></h4>
+  Use this panel to perform volume path queries on all registered Nova nodes.
+  <br>
+  For each registered Nova node, the query will return all active volume paths along with any
+  associated volume names and ids. Results of the queries will be saved and can be compared
+  against previous queries using the panels "Diff" feature. This can be very useful, for example,
+  in determining if volume migration was completed successfully.
   <br>
   <h2><span id="cinder_nodes_ref">Where to begin...</span></h2>
   <h4>To verify your OpenStack Cinder and Nova environment and discover HPE 3PAR backend

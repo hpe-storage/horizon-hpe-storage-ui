@@ -1,0 +1,20 @@
+{% block main %}
+{#  <div id="added-nodes">#}
+{#      {{ added_nodes_table.render }}#}
+{#  </div>#}
+{#  <br>#}
+{#  <br>#}
+{#  <div id="removed-nodes">#}
+{#      {{ removed_nodes_table.render }}#}
+{#  </div>#}
+{#  <br>#}
+{#  <br>#}
+{#  <div id="changes">#}
+{#      {{ modified_paths_table.render }}#}
+{#  </div>#}
+{#  <br>#}
+{#  <br>#}
+  <div id="changes">
+      {{ diff_paths_table.render }}
+  </div>
+{% endblock %}

@@ -24,6 +24,8 @@ from horizon_hpe_storage.storage_panel.diags \
     import urls as diag_urls
 from horizon_hpe_storage.storage_panel.storage_arrays \
     import urls as array_urls
+from horizon_hpe_storage.storage_panel.lun_tool \
+    import urls as lun_tool_urls
 
 from horizon_hpe_storage.storage_panel import views
 
@@ -42,4 +44,6 @@ urlpatterns = patterns(
         include(diag_urls, namespace='diags')),
     url(r'^storage_arrays/',
         include(array_urls, namespace='storage_arrays')),
+    url(r'^lun_tool/',
+        include(lun_tool_urls, namespace='lun_tool')),
 )

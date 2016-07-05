@@ -19,6 +19,7 @@ Key features:
 * Validate required software packages and drivers are installed on Cinder and Nova nodes.
 * Provide detailed Horizon views of all HPE Storage Arrays configured for Cinder backend storage.
 * Provide a direct link between OpenStack volumes and their associated detail views in the HPE storage management console (HPE 3PAR SSMC).
+* Query Nova nodes for volume paths and associated attached Cinder volumes.
 
 Requirements
 ------------

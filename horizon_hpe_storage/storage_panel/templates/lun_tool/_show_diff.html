@@ -1,0 +1,14 @@
+{% extends "horizon/common/_modal_form.html" %}
+{% load i18n %}
+
+{% block modal-body-right %}
+  <h3>{% trans "Description:" %}</h3>
+  <p>{% blocktrans %}
+      Compare volume path queries and show details of any changes.
+      <br>
+      <br>
+      Warning - generating the change list may take several minutes to complete.
+     {% endblocktrans %}
+  </p>
+{% endblock %}
+
