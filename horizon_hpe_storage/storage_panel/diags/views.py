@@ -153,14 +153,26 @@ class CinderTestDetailView(tabs.TabView):
                                 item_str = raw_result[len('config_items:'):]
                                 items = item_str.split(";;")
                                 config_items = {}
+                                replication_idx = 1
                                 for item in items:
                                     if "==" in item:
                                         key, value = item.split("==")
                                         if "password" in key:
                                             value = '*' * len(value)
+                                        elif "replication_device" in key:
+                                            if replication_idx > 1:
+                                                key += \
+                                                    "[" + \
+                                                    str(replication_idx) + \
+                                                    "]"
+                                            replication_idx += 1
                                         config_items[key] = value
                                 disp_results['config_items'] = \
                                     OrderedDict(sorted(config_items.items()))
+                            elif raw_result.startswith('replication'):
+                                test_table_entry = \
+                                    self.format_replication_data(backend_name,
+                                                                 raw_result)
                             else:
                                 if ":" in raw_result:
                                     key, value = raw_result.split(":")
@@ -241,6 +253,34 @@ class CinderTestDetailView(tabs.TabView):
 
         return disp_results
 
+    def format_replication_data(self, backend_name, data):
+        table_entry = {}
+        item_str = data[len('replication:'):]
+        table_entry['backend_name'] = \
+            backend_name
+        table_entry['test'] = "replication"
+        if ";;" in item_str:
+            items = item_str.split(";;")
+            rep_str = ""
+            for item in items:
+                if item == "N/A":
+                    rep_str = item
+                else:
+                    if ":" in item:
+                        key, value = item.split(":")
+                        if key == 'Backend ID':
+                            if rep_str:
+                                rep_str += "<br><br>"
+                        elif rep_str:
+                            rep_str += "<br>"
+                        rep_str += (key + ": " + self.color_result(value))
+            table_entry['result'] = \
+                safestring.mark_safe(rep_str)
+        else:
+            table_entry['result'] = "N/A"
+
+        return table_entry
+
     def get_raw_data(self, node):
         node_type = node['node_type']
 
@@ -264,10 +304,25 @@ class CinderTestDetailView(tabs.TabView):
                     stats += "Driver Configuration Section [" + \
                              raw_results[0] + "]:\n"
                     test_results = ""
+                    replication_test_results = ""
                     for raw_result in raw_results:
                         if raw_result.startswith('system_info'):
                             system_info = self.get_raw_backend_system_info(
                                 raw_result[12:])
+                        elif raw_result.startswith('replication'):
+                            results = raw_result[len('replication:'):]
+                            if ";;" in results:
+                                entries = results.split(";;")
+                                for entry in entries:
+                                    if ":" in entry:
+                                        key, value = entry.split(":")
+                                        replication_test_results += \
+                                            ("\t\t" +
+                                             key + ": " + value +
+                                             "\n")
+                            else:
+                                replication_test_results = \
+                                    ("\t\tN/A\n")
                         elif raw_result.startswith('config_items'):
                             config_items = ""
                             item_str = raw_result[len('config_items:'):]
@@ -277,6 +332,9 @@ class CinderTestDetailView(tabs.TabView):
                                     key, value = item.split("==")
                                     if "password" in key:
                                         value = '*' * len(value)
+                                    elif "replication_device" in key:
+                                        # reformat these entries
+                                        value = value.replace("\n", "\n\t\t\t")
                                     config_items += \
                                         ("\t\t" + key + ": " + value + "\n")
                         else:
@@ -289,6 +347,12 @@ class CinderTestDetailView(tabs.TabView):
                              config_items
                     stats += "\n\tTest Results for 'cinder.conf':\n" + \
                              test_results
+
+                    if replication_test_results:
+                        stats += "\n\tTest Results for 'replication_device' " \
+                                 "in 'cinder.conf':\n" + \
+                                 replication_test_results
+
                     stats += "\n\tSystem Information:\n" + \
                              system_info
 
@@ -372,6 +436,8 @@ class CinderTestDetailView(tabs.TabView):
                 entry['iscsi'] = test_result
             elif "driver" in test['test']:
                 entry['driver'] = test_result
+            elif "replication" in test['test']:
+                entry['replication'] = test_result
 
         formatted_data.append(entry)
         return formatted_data
@@ -403,7 +469,22 @@ class CinderTestDetailView(tabs.TabView):
             {"test": "Volume Driver",
              "entries_used": "volume_driver",
              "description": "Verify that the driver exists on the "
-                "Cinder node."}
+                "Cinder node."},
+
+            {"test": "Replication Device",
+             "entries_used": "replication_device (OPTIONAL)",
+             "description": "If this entry(s) is found, additional tests "
+                "will be performed to verify the "
+                "following 'replication_device' "
+                "sub-entries:"
+                "<br>hpe3par_api_url - 'WS API' connection test"
+                "<br>hpe3par_username and hpe3par_password - "
+                "'Credentials' test"
+                "<br>cpg_map - 'CPG' test for 'Source CPGs' (first entry in "
+                "map pair) and 'Destination CPGs' (second entry in map "
+                "pair) tests"
+                "<br>replication_mode - value must be 'sync' or "
+                "'periodic')."}
         ]
         return tests
 

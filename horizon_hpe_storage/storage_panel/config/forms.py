@@ -387,6 +387,7 @@ class RegisterCinderNode(forms.SelfHandlingForm):
                 data['host_name'],
                 data['ssh_name'],
                 data['ssh_pwd'],
+                # data['test_replication'],
                 config_path=data['config_path'])
 
             messages.success(request, _('Successfully registered Cinder '
@@ -444,6 +445,7 @@ class EditCinderNode(forms.SelfHandlingForm):
             ssh_name_field = self.fields['ssh_name']
             ssh_pwd_field = self.fields['ssh_pwd']
             config_path_field = self.fields['config_path']
+            # replication_field = self.fields['test_replication']
 
             self.keystone_api.do_setup(request)
             self.barbican_api.do_setup(self.keystone_api.get_session())
@@ -480,6 +482,11 @@ class EditCinderNode(forms.SelfHandlingForm):
             else:
                 config_path_field.initial = ''
 
+            # if 'test_replication' in node:
+            #     replication_field.initial = node['test_replication']
+            # else:
+            #     replication_field.initial = ''
+
         except Exception as ex:
             msg = _('Unable to retrieve Cinder Node details.')
             exceptions.handle(self.request, msg)
@@ -493,6 +500,7 @@ class EditCinderNode(forms.SelfHandlingForm):
         ssh_name_field = self.fields['ssh_name']
         ssh_pwd_field = self.fields['ssh_pwd']
         config_path_field = self.fields['config_path']
+        # replication_field = self.fields['test_replication']
 
         if form_data['node_ip'] == \
                 node_ip_field.initial:
@@ -504,8 +512,10 @@ class EditCinderNode(forms.SelfHandlingForm):
                             ssh_pwd_field.initial:
                         if form_data['config_path'] == \
                                 config_path_field.initial:
-                            raise forms.ValidationError(
-                                _('No fields have been modified.'))
+                            # if form_data['test_replication'] == \
+                            #         replication_field.initial:
+                                raise forms.ValidationError(
+                                    _('No fields have been modified.'))
 
         # Check to make sure password fields match.
         if form_data['ssh_pwd'] != ssh_pwd_field.initial:
@@ -531,6 +541,7 @@ class EditCinderNode(forms.SelfHandlingForm):
                 data['host_name'],
                 data['ssh_name'],
                 data['ssh_pwd'],
+                # data['test_replication'],
                 config_path=data['config_path'])
 
             messages.success(

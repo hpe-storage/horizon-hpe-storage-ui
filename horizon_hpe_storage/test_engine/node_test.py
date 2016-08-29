@@ -80,8 +80,10 @@ class NodeTest():
         self.error_text = ''
         self.test_result_text = ''
         self.io_q = Queue()
-        self.proc = Popen(['cinderdiags', '-v', 'options-check', '-f', 'json',
-                           '-conf-data', conf_data, '-incl-system-info'],
+        self.proc = Popen(['cinderdiags', '-v', 'options-check', '-f',
+                           'json', '-conf-data', conf_data,
+                           '-incl-system-info',
+                           '-incl-replication-checks'],
                           stdout=PIPE,
                           stderr=PIPE)
         Thread(target=self.stream_watcher, name='stdout-watcher',

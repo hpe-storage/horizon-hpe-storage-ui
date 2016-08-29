@@ -55,7 +55,7 @@ class DiagConfigTestResultsColumn(tables.Column):
             if node['validation_time'] == 'Failed':
                 return "N/A"
             elif 'diag_test_status' in node and 'software_test_status' in node:
-                if ":fail:" in node['diag_test_status'] or \
+                if ":fail" in node['diag_test_status'] or \
                         ":fail" in node['software_test_status']:
                     result_str = '<font color="red">FAIL </font>'
                 else:

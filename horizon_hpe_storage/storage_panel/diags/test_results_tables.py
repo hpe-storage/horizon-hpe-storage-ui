@@ -13,9 +13,17 @@
 #    limitations under the License.
 
 from django.utils.translation import ugettext_lazy as _
+from django.utils import safestring
 
 from horizon import forms
 from horizon import tables
+
+
+class DescriptionColumn(tables.Column):
+    # Customized column class.
+    def get_raw_data(self, results):
+        description = results['description']
+        return safestring.mark_safe(description)
 
 
 class TestDescriptionTable(tables.DataTable):
@@ -27,10 +35,9 @@ class TestDescriptionTable(tables.DataTable):
         'entries_used',
         verbose_name=_('Utilized Driver Configuration Entries'),
         form_field=forms.CharField(max_length=255))
-    description = tables.Column(
+    description = DescriptionColumn(
         'description',
-        verbose_name=_('Description'),
-        form_field=forms.CharField(max_length=255))
+        verbose_name=_('Description'))
 
     class Meta(object):
         name = "test_descriptions"
@@ -39,6 +46,15 @@ class TestDescriptionTable(tables.DataTable):
 
     def get_object_id(self, datum):
         return datum.get('test', id(datum))
+
+
+class ReplicationColumn(tables.Column):
+    # Customized column class.
+    def get_raw_data(self, results):
+        if 'replication' in results:
+            return results['replication']
+        else:
+            return "N/A"
 
 
 class BackendTestTable(tables.DataTable):
@@ -66,6 +82,9 @@ class BackendTestTable(tables.DataTable):
         'driver',
         verbose_name=_('Volume Driver'),
         form_field=forms.CharField(max_length=64))
+    replication = ReplicationColumn(
+        'replication',
+        verbose_name=_('Replication Device'))
 
     class Meta(object):
         name = "backend_test_results"

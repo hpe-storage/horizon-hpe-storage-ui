@@ -176,7 +176,8 @@ class BarbicanAPI(object):
             self.client.containers.delete(container.container_ref)
 
     def add_node(self, name, type, ip, host_name,
-                 ssh_name, ssh_pwd, config_path=None, diag_status=None,
+                 ssh_name, ssh_pwd,
+                 config_path=None, diag_status=None,
                  software_status=None, diag_run_time=None,
                  ssh_validation_time=None, os_vars=None):
         # ensure container doesn't already exist

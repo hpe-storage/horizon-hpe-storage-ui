@@ -72,6 +72,7 @@ def run_cinder_node_test(node, software_tests, barbican_api):
             node['host_name'],
             node['ssh_name'],
             node['ssh_pwd'],
+            # node['test_replication'],
             config_path=node['config_path'],
             diag_run_time=cur_time,
             ssh_validation_time="Failed")
@@ -96,9 +97,13 @@ def run_cinder_node_test(node, software_tests, barbican_api):
                 "credentials: " + section['Credentials'] + "::" + \
                 "driver:" + section['Driver'] + "::" + \
                 "wsapi:" + section['WS API'] + "::" + \
-                "iscsi:" + section['iSCSI IP(s)'] + "::" + \
+                "iscsi:" + section['iSCSI IP(s)'] + "::"
+            if 'Replication Device' in section:
+                config_status += \
+                    "replication:" + section['Replication Device'] + "::"
+            config_status += \
                 "system_info:" + section['System Info'] + "::" + \
-                "config_items:" + section['Conf Items'] + "::"
+                "config_items:" + section['Conf Items']
             LOG.info("options:config_status - %s" % config_status)
 
     # build list of software to test against
@@ -140,6 +145,7 @@ def run_cinder_node_test(node, software_tests, barbican_api):
         node['host_name'],
         node['ssh_name'],
         node['ssh_pwd'],
+        # node['test_replication'],
         config_path=node['config_path'],
         diag_status=config_status,
         software_status=software_status,
