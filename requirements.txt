@@ -3,5 +3,5 @@
 # process, which may cause wedges in the gate later.
 
 # other tabs within our plug-in panel
-cinderdiags>=2.4.0
+cinderdiags>=2.4.1
 python-barbicanclient>=3.3.0
