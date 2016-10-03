@@ -153,6 +153,9 @@ class LunToolTable(tables.DataTable):
     def get_object_id(self, result):
         return result['timestamp']
 
+    def get_object_display(self, result):
+        return result['timestamp']
+
     class Meta(object):
         name = "lun_volume_paths"
         verbose_name = _("Volume Path Query Results")
